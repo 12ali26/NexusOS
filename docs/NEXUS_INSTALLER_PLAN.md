@@ -2,8 +2,8 @@
 
 ## Experimental Milestone
 
-The first installer is a portable Linux bootstrap for deploying the Nexus Cloud
-frontend over an existing CasaOS installation. It is intentionally simple and
+The installer is a portable Linux bootstrap for deploying a prebuilt Nexus Cloud
+frontend archive over a CasaOS installation. It is intentionally simple and
 readable while the installation flow is tested.
 
 ```sh
@@ -20,10 +20,27 @@ best-effort path through `dnf` or `yum`.
    `uname -m`.
 2. Install the small set of bootstrap dependencies and Docker when missing.
 3. Install CasaOS with its official installer when missing.
-4. Clone or fast-forward `/opt/nexusos`, provision Node.js 22 LTS and
-   `pnpm@9.0.6`, and build the UI.
-5. Create a timestamped backup of `/var/lib/casaos/www`, deploy the Nexus Cloud
-   UI, restart `casaos.service`, and print possible local URLs.
+4. Download the latest stable Nexus UI GitHub Release assets, verify the SHA256
+   checksum, and extract the static frontend.
+5. Create a timestamped backup of `/var/lib/casaos/www`, deploy the UI, record
+   release metadata under `/var/lib/nexus-cloud`, restart `casaos.service`, and
+   print possible local URLs.
+
+CasaOS remains a set of host services. Docker remains available for applications
+managed by CasaOS. The Nexus Cloud overlay is a static UI archive and does not
+need Node.js, pnpm, or a source checkout during normal installation.
+
+## Developer Source Builds
+
+Developers can explicitly build the UI on the target machine:
+
+```sh
+sudo bash install-nexus.sh --build-from-source
+```
+
+This opt-in path clones or fast-forwards `/opt/nexusos`, installs Git, Node.js 22
+LTS, Corepack, and `pnpm@9.0.6`, then compiles the Vue frontend. Archive failures
+never fall back to this slower path automatically.
 
 ## Guardrails
 

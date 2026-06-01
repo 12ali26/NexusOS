@@ -1,0 +1,46 @@
+name: Release Nexus Cloud UI
+
+on:
+  push:
+    tags:
+      - "nexus-ui-v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release-ui:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build frontend
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.6 --activate
+          pnpm --dir UI install --frozen-lockfile
+          pnpm --dir UI build
+
+      - name: Package frontend archive
+        run: |
+          tar -C UI/build/sysroot/var/lib/casaos -czf nexus-ui.tar.gz www
+          sha256sum nexus-ui.tar.gz > nexus-ui.tar.gz.sha256
+
+      - name: Publish stable-channel experimental release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Nexus Cloud UI ${{ github.ref_name }}
+          body: |
+            Experimental Nexus Cloud UI archive.
+
+            This release is intended for early installer testing.
+          prerelease: false
+          files: |
+            nexus-ui.tar.gz
+            nexus-ui.tar.gz.sha256

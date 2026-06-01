@@ -3,7 +3,7 @@
 install_dependencies_debian() {
 	log "Installing required packages with apt..."
 	apt-get update
-	DEBIAN_FRONTEND=noninteractive apt-get install -y curl git ca-certificates rsync
+	DEBIAN_FRONTEND=noninteractive apt-get install -y curl ca-certificates rsync tar
 }
 
 install_dependencies() {

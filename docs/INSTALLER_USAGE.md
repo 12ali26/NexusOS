@@ -12,24 +12,59 @@ On a fresh supported Linux server, run:
 curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash
 ```
 
-The installer clones the repository into `/opt/nexusos`, installs missing
-dependencies, installs Docker and CasaOS when needed, builds the frontend, and
-prints possible local access URLs. It does not assume that the server has a
-public IP.
+The installer downloads a verified prebuilt Nexus Cloud UI archive, installs
+Docker and CasaOS when needed, deploys the static frontend, and prints possible
+local access URLs. It does not assume that the server has a public IP.
 
 ## What It Changes
 
-- Installs `curl`, `git`, `ca-certificates`, and `rsync`.
+- Installs `curl`, `ca-certificates`, `rsync`, and `tar`.
 - Installs Docker with Docker's convenience script when Docker is missing.
 - Installs CasaOS with the official CasaOS installer when CasaOS is missing.
-- Installs Node.js 22 LTS when an older Node.js runtime is present or Node.js is
-  missing, then enables Corepack and activates `pnpm@9.0.6`.
-- Clones or fast-forwards the `main` branch in `/opt/nexusos`.
-- Builds the frontend and replaces `/var/lib/casaos/www`.
+- Downloads `nexus-ui.tar.gz` and its SHA256 checksum from the latest stable
+  Nexus UI GitHub Release.
+- Verifies and extracts the archive before replacing `/var/lib/casaos/www`.
+- Records the deployed release tag and checksum under `/var/lib/nexus-cloud`.
 - Restarts the existing `casaos.service`.
 
 The installer does not rename backend services, install default apps, configure
 a reverse proxy, or open firewall ports.
+
+CasaOS itself runs as host services. Docker is used for applications managed by
+CasaOS. The Nexus Cloud overlay is a static frontend archive, so normal installs
+do not need Git, Node.js, Corepack, pnpm, or a frontend build on the server.
+
+## Versions and Developer Builds
+
+Deploy a specific release for testing or rollback:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --version nexus-ui-v0.1.0
+```
+
+Developers can opt into the slower source-build path:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --build-from-source
+```
+
+Source mode clones or fast-forwards `/opt/nexusos`, installs Git and Node.js 22
+LTS when needed, activates `pnpm@9.0.6`, and builds the Vue frontend locally.
+Archive download failures do not automatically fall back to source mode.
+
+## Publish a UI Release
+
+The dedicated GitHub Actions workflow builds and publishes UI assets for tags
+matching `nexus-ui-v*.*.*`. Publish the first experimental stable-channel asset
+with:
+
+```sh
+git tag nexus-ui-v0.1.0
+git push origin nexus-ui-v0.1.0
+```
+
+The workflow publishes `nexus-ui.tar.gz` and `nexus-ui.tar.gz.sha256`. Normal
+installs fail clearly until at least one stable-channel UI release exists.
 
 ## Restore the Previous UI
 
@@ -104,8 +139,8 @@ validated target.
 - Installed apps may publish their own host ports.
 - The installer does not automatically update firewall rules.
 - The RHEL-family path is best effort and has not been validated.
-- Existing tracked changes in `/opt/nexusos` stop updates rather than being
-  overwritten.
+- Existing tracked changes in `/opt/nexusos` stop developer source-build updates
+  rather than being overwritten.
 
 Expose only the dashboard and application ports you intentionally need. Restrict
 test deployments by source IP whenever the hosting environment supports it.

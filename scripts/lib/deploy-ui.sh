@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 deploy_nexus_ui() {
-	local build_root="${NEXUS_INSTALL_ROOT}/UI/build/sysroot/var/lib/casaos/www"
-	local web_root="/var/lib/casaos/www"
+	local build_root="${NEXUS_UI_SOURCE_ROOT:-${NEXUS_INSTALL_ROOT}/UI/build/sysroot/var/lib/casaos/www}"
+	local web_root="${NEXUS_WEB_ROOT:-/var/lib/casaos/www}"
 	local timestamp
 	timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 	export NEXUS_UI_BACKUP="${web_root}.backup-${timestamp}"
@@ -22,7 +22,9 @@ deploy_nexus_ui() {
 	mkdir -p "${web_root}"
 	rsync -a --delete "${build_root}/" "${web_root}/"
 
-	if command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then
+	if [[ "${NEXUS_SKIP_RESTART:-0}" == "1" ]]; then
+		warn "Skipping casaos.service restart because NEXUS_SKIP_RESTART=1."
+	elif command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then
 		log "Restarting casaos.service..."
 		systemctl restart casaos.service
 	else
