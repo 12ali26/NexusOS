@@ -3,12 +3,7 @@
 		<figure class="image _is-190x32 mb-3">
 			<img alt="Nexus Cloud" src="../assets/img/logo/logo.svg">
 		</figure>
-		<span v-if="!rssShow || rss.length === 0" class="intro-text ml-4">
-			Nexus Cloud - based on
-			<a href="https://github.com/IceWhaleTech/CasaOS" rel="noopener noreferrer" target="_blank">CasaOS</a>
-			and powered by open-source cloud computing.
-		</span>
-		<span v-else class="window ml-4">
+		<span v-if="rssShow && rss.length > 0" class="window ml-4">
 			<ul :style="{ '--time': 5 * line + 's', '--perc': perc, '--line': line }" class="scroll">
 				<li v-for="(item, key) in rss" :key="key" class="has-text-left" @click="$messageBus('connect_news')">
 					<a @click="gotoLink(item.link)" class="intro-text is-clickable" target="_blank"
