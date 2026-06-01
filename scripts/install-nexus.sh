@@ -288,17 +288,49 @@ deploy_nexus_ui() {
 	log "Deploying the Nexus Cloud UI..."
 	mkdir -p "${web_root}" "${state_root}"
 	rsync -a --delete "${NEXUS_UI_SOURCE_ROOT}/" "${web_root}/"
+	[[ -f "${web_root}/index.html" ]] || fail "Deployed Nexus Cloud UI is invalid: ${web_root}/index.html is missing."
+
+	if [[ "${NEXUS_SKIP_PERMISSIONS:-0}" == "1" ]]; then
+		warn "Skipping UI ownership and mode normalization because NEXUS_SKIP_PERMISSIONS=1."
+	else
+		log "Normalizing Nexus Cloud UI ownership and modes..."
+		chown -R root:root "${web_root}"
+		find "${web_root}" -type d -exec chmod 755 {} +
+		find "${web_root}" -type f -exec chmod 644 {} +
+	fi
+
 	printf '%s\n' "${NEXUS_VERSION:-latest}" > "${state_root}/ui-release"
 	printf '%s\n' "${NEXUS_UI_CHECKSUM}" > "${state_root}/ui-sha256"
 
 	if [[ "${NEXUS_SKIP_RESTART:-0}" == "1" ]]; then
 		warn "Skipping casaos.service restart because NEXUS_SKIP_RESTART=1."
 	elif command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then
-		log "Restarting casaos.service..."
-		systemctl restart casaos.service
+		restart_casaos_service
 	else
 		warn "systemd is unavailable. Restart casaos.service manually if your environment provides it."
 	fi
+}
+
+restart_casaos_service() {
+	local restart_failed=0
+
+	log "Restarting casaos.service..."
+	systemctl restart casaos || restart_failed=1
+	sleep 3
+
+	if systemctl is-active --quiet casaos; then
+		if (( restart_failed == 1 )); then
+			warn "systemctl restart casaos returned an error, but casaos.service became active after the wait."
+		else
+			log "casaos.service is active."
+		fi
+		return
+	fi
+
+	printf '[Nexus Cloud] ERROR: casaos.service is not active after restart.\n' >&2
+	systemctl status casaos --no-pager -l || true
+	journalctl -xeu casaos.service --no-pager -n 80 || true
+	fail "casaos.service restart verification failed."
 }
 
 get_casaos_port() {

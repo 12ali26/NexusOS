@@ -68,7 +68,8 @@ installs fail clearly until at least one stable-channel UI release exists.
 
 ## Restore the Previous UI
 
-Each deployment prints a timestamped backup path such as:
+Each deployment prints a timestamped backup folder using the format
+`www.backup-YYYYMMDDTHHMMSSZ`, for example:
 
 ```text
 /var/lib/casaos/www.backup-20260601T120000Z
@@ -78,7 +79,10 @@ Restore that backup with:
 
 ```sh
 sudo rsync -a --delete /var/lib/casaos/www.backup-20260601T120000Z/ /var/lib/casaos/www/
-sudo systemctl restart casaos.service
+sudo chown -R root:root /var/lib/casaos/www
+sudo find /var/lib/casaos/www -type d -exec chmod 755 {} +
+sudo find /var/lib/casaos/www -type f -exec chmod 644 {} +
+sudo systemctl restart casaos
 ```
 
 Use the exact backup path printed by your installer run.
