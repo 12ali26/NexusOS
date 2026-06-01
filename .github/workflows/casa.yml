@@ -43,7 +43,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          submodules: true
 #      - name: Initialization environment
 #        env:
 #          DEBIAN_FRONTEND: noninteractive
@@ -75,14 +74,14 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '14'
+          node-version: '18'
           
-      - name: Build frontend with nodejs and yarn
+      - name: Build frontend with nodejs and pnpm
         run: |
-          cd UI
-          ls
-          yarn install
-          yarn build
+          corepack enable
+          corepack prepare pnpm@9.0.6 --activate
+          pnpm --dir UI install --frozen-lockfile
+          pnpm --dir UI build
 
       - name: list work
         run: pwd
