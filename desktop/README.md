@@ -64,8 +64,8 @@ Milestone 6B is an opt-in repository-checkout prototype. It adds:
 - Workspace, Downloads, and Shared desktop folder shortcuts.
 - A local Nexus Desktop browser welcome page with optional web links.
 
-VS Code and VSCodium are not installed, so the premium profile does not create
-a fake editor launcher.
+VS Code and VSCodium are not baked into the premium image, so the premium
+profile does not create a fake editor launcher.
 
 See [NEXUS_DESKTOP_UI_PLAN.md](./NEXUS_DESKTOP_UI_PLAN.md) for the visual design
 and XFCE constraints.
@@ -108,6 +108,83 @@ XFCE backups use:
 
 Existing GTK bookmarks are backed up separately. The script does not delete
 user files, Workspace, Downloads, Shared, or Desktop documents.
+
+## Validated Developer Workstation
+
+Nexus Desktop was tested successfully as a browser-accessible developer
+workstation on EC2:
+
+- A VS Code `.deb` package was downloaded and installed inside the running
+  desktop container.
+- A PackageKit warning appeared during installation but did not block the
+  install.
+- VS Code launched successfully inside the browser desktop.
+- `/config/Workspace` was opened in VS Code.
+- A `test.js` file created in VS Code appeared on the EC2 host at:
+
+```text
+/DATA/Nexus/Workspace/test.js
+```
+
+The Compose bind mount provides the mapping:
+
+```text
+/config/Workspace -> /DATA/Nexus/Workspace
+```
+
+This proves that graphical development tools can run inside Nexus Desktop
+while project files remain persistent and directly accessible on the host.
+
+## Install Downloaded `.deb` Apps
+
+Milestone 7A adds a repository-checkout helper for installing one downloaded
+Debian package at a time. Recreate the stock or premium desktop container after
+pulling changes so the read-only helper mount becomes available:
+
+```sh
+cd ~/NexusOS
+git pull
+cd desktop
+docker compose up -d --force-recreate
+```
+
+For the premium desktop, use:
+
+```sh
+cd ~/NexusOS
+git pull
+cd desktop
+docker compose -f docker-compose.yml -f docker-compose.premium.yml up -d --force-recreate
+```
+
+Install a downloaded VS Code package:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-deb.sh '/config/Downloads/code_*.deb'
+```
+
+Install a downloaded Cursor package:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-deb.sh '/config/Downloads/cursor_*.deb'
+```
+
+If `/config/Downloads` contains exactly one `.deb`, install it with:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-downloaded-debs.sh
+```
+
+View the append-only installation log:
+
+```sh
+docker exec -it nexus-desktop tail -100 /config/nexus/logs/app-install.log
+```
+
+Keep wildcard patterns quoted so they are expanded inside the container. The
+helper refuses zero matches and multiple matches. See
+[NEXUS_DESKTOP_APP_INSTALLATION_PLAN.md](./NEXUS_DESKTOP_APP_INSTALLATION_PLAN.md)
+for the persistence model and future app strategy.
 
 ### Return to Stock Desktop
 
@@ -168,6 +245,14 @@ Then force reapply and restart the container.
   single sign-on yet.
 - The dashboard card can open the desktop, but deeper lifecycle integration is
   deferred.
+- Applications installed manually inside the running container, including VS
+  Code installed from a `.deb`, may not survive a full container recreation
+  unless they are baked into an image or provisioned by a future app-install
+  workflow.
+- Milestone 7A provides a terminal helper for `.deb` applications. A future
+  Thunar action remains deferred: `Right-click .deb -> Install with Nexus`.
+- Streamed desktop installer staging does not download `desktop/scripts/` yet,
+  so the Milestone 7A helper currently requires a repository checkout.
 - The pinned LinuxServer Webtop image supports `amd64` and `arm64`; current
   Webtop releases do not provide an `armv7` image.
 

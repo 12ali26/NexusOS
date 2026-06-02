@@ -12,6 +12,7 @@ services:
       - /DATA/Nexus/Workspace:/config/Workspace
       - /DATA/Nexus/Downloads:/config/Downloads
       - /DATA/Nexus/Shared:/config/Shared
+      - ./scripts:/config/nexus/scripts:ro
     ports:
       - "6901:3001"
     shm_size: "1gb"

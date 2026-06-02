@@ -84,6 +84,33 @@ more application defaults, and optional developer tooling.
 ## Deferred Work
 
 - Publish or stage premium assets through the streamed installer.
-- Add VS Code or VSCodium only as an explicit developer-workstation feature.
+- Add a future Thunar action for the Milestone 7A helper:
+  `Right-click .deb -> Install with Nexus`.
+- Add VS Code or VSCodium as an explicit developer-workstation feature if it
+  should survive full container recreation.
 - Evaluate a maintained custom base image if deeper rounded-window styling,
   blur, or curated application bundles become product requirements.
+
+## Developer Workstation Validation
+
+The EC2 prototype was validated with VS Code installed manually from a
+downloaded `.deb` file inside the running desktop container. A PackageKit
+warning appeared but did not block installation. VS Code launched in the
+browser desktop, opened `/config/Workspace`, and created `test.js`.
+
+The file appeared on the EC2 host at:
+
+```text
+/DATA/Nexus/Workspace/test.js
+```
+
+This confirms the persistent mapping:
+
+```text
+/config/Workspace -> /DATA/Nexus/Workspace
+```
+
+Nexus Desktop can therefore function as a browser-accessible developer
+workstation. Manually installed container packages remain experimental because
+they may not survive a full container recreation unless they are baked into an
+image or installed through a future reproducible workflow.
