@@ -49,6 +49,12 @@ The standalone installer still uses this stock path:
 sudo bash scripts/install-desktop.sh
 ```
 
+The streamed dashboard installer also defaults to stock desktop:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --with-desktop
+```
+
 ## Developer Edition Milestone 7B
 
 Milestone 7B expands the opt-in premium repository-checkout image into
@@ -90,6 +96,18 @@ From a NexusOS repository checkout:
 cd desktop
 docker compose -f docker-compose.yml -f docker-compose.premium.yml build --pull nexus-desktop
 docker compose -f docker-compose.yml -f docker-compose.premium.yml up -d --force-recreate
+```
+
+Or install Developer Edition with the standalone installer:
+
+```sh
+sudo bash scripts/install-desktop.sh --desktop-edition developer
+```
+
+The dashboard installer can stage and build Developer Edition on the server:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --with-desktop --desktop-edition developer
 ```
 
 The Developer Edition image includes the theme hook, assets, and baked tools.
@@ -213,9 +231,11 @@ for the persistence model and future app strategy.
 
 ### Return to Stock Desktop
 
-Recreate the service without the premium override:
+Run the stock installer, then recreate the service without the premium
+override:
 
 ```sh
+sudo bash scripts/install-desktop.sh --desktop-edition stock
 cd desktop
 docker compose -f docker-compose.yml up -d --force-recreate
 ```
@@ -261,9 +281,9 @@ Then force reapply and restart the container.
 
 ## Known Limitations
 
-- Streamed `--with-desktop` installer staging currently downloads only the
-  stock Compose file. Developer Edition 7B requires a repository checkout until
-  installer integration is updated.
+- Streamed Developer Edition installation builds locally on the server and
+  takes longer than stock startup. It requires access to Ubuntu packages and
+  the signed VSCodium repository.
 - XFCE does not provide native glass blur, fully rounded application windows,
   or dock-grade animations.
 - There is no trusted public HTTPS certificate, reverse proxy, or Nexus
@@ -276,8 +296,7 @@ Then force reapply and restart the container.
   workflow.
 - Milestone 7A provides a terminal helper for `.deb` applications. A future
   Thunar action remains deferred: `Right-click .deb -> Install with Nexus`.
-- Streamed desktop installer staging does not download `desktop/scripts/` yet,
-  so the Milestone 7A helper currently requires a repository checkout.
+- Developer Edition supports `amd64` and `arm64`. Use stock desktop on `armv7`.
 - Ollama, AI runtime bundling, Docker-in-Docker, and default editor extensions
   remain deferred.
 - The pinned LinuxServer Webtop image supports `amd64` and `arm64`; current

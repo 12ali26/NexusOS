@@ -102,8 +102,9 @@ be part of the maintained workstation image.
 
 ## Current Limitations
 
-- Milestone 7A requires a full NexusOS repository checkout. Streamed desktop
-  installer staging does not download `desktop/scripts/` yet.
+- Milestone 7C streamed desktop installs stage `desktop/scripts/`. Servers
+  staged by an earlier installer run must rerun the desktop installation to
+  receive the helper scripts.
 - The helper is deliberately limited to one `.deb` at a time.
 - The helper does not verify vendor signatures beyond the package-manager
   behavior. Download applications only from trusted sources.

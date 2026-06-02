@@ -14,6 +14,8 @@ readonly LIB_DIR="${SCRIPT_DIR}/lib"
 
 NEXUS_BUILD_FROM_SOURCE=0
 NEXUS_WITH_DESKTOP=0
+NEXUS_DESKTOP_EDITION="stock"
+NEXUS_DESKTOP_EDITION_EXPLICIT=0
 NEXUS_VERSION=""
 NEXUS_UI_SOURCE_ROOT=""
 NEXUS_UI_CHECKSUM=""
@@ -40,6 +42,8 @@ Options:
   --version TAG         Install a specific Nexus UI release, for example nexus-ui-v0.1.0.
   --build-from-source   Clone or update NexusOS and build the UI locally. For development only.
   --with-desktop        Install the optional Nexus Desktop container after the dashboard.
+  --desktop-edition EDITION
+                        Select stock or developer. Requires --with-desktop.
   --help                Show this help text.
 EOF
 }
@@ -60,6 +64,15 @@ parse_args() {
 				NEXUS_WITH_DESKTOP=1
 				shift
 				;;
+			--desktop-edition)
+				(( $# >= 2 )) || fail "--desktop-edition requires stock or developer."
+				case "$2" in
+					stock|developer) NEXUS_DESKTOP_EDITION="$2" ;;
+					*) fail "Unknown desktop edition: $2. Expected stock or developer." ;;
+				esac
+				NEXUS_DESKTOP_EDITION_EXPLICIT=1
+				shift 2
+				;;
 			--help|-h)
 				usage
 				exit 0
@@ -69,6 +82,10 @@ parse_args() {
 				;;
 		esac
 	done
+
+	if (( NEXUS_DESKTOP_EDITION_EXPLICIT == 1 && NEXUS_WITH_DESKTOP == 0 )); then
+		fail "--desktop-edition requires --with-desktop."
+	fi
 }
 
 require_root() {
@@ -348,22 +365,64 @@ install_optional_desktop() {
 	if [[ -f "${local_installer}" && -f "${local_compose}" ]]; then
 		desktop_installer="${local_installer}"
 	else
-		log "Downloading the optional Nexus Desktop installer..."
-		mkdir -p "${NEXUS_DESKTOP_ROOT}/scripts" "${NEXUS_DESKTOP_ROOT}/desktop"
-		curl --retry 3 --retry-delay 2 -fsSL \
-			"https://raw.githubusercontent.com/${NEXUS_RELEASE_REPOSITORY}/${NEXUS_BRANCH}/scripts/install-desktop.sh" \
-			-o "${NEXUS_DESKTOP_ROOT}/scripts/install-desktop.sh" ||
-			fail "Unable to download scripts/install-desktop.sh."
-		curl --retry 3 --retry-delay 2 -fsSL \
-			"https://raw.githubusercontent.com/${NEXUS_RELEASE_REPOSITORY}/${NEXUS_BRANCH}/desktop/docker-compose.yml" \
-			-o "${NEXUS_DESKTOP_ROOT}/desktop/docker-compose.yml" ||
-			fail "Unable to download desktop/docker-compose.yml."
-		chmod 755 "${NEXUS_DESKTOP_ROOT}/scripts/install-desktop.sh"
+		stage_desktop_runtime
 		desktop_installer="${NEXUS_DESKTOP_ROOT}/scripts/install-desktop.sh"
 	fi
 
-	log "Installing the optional Nexus Desktop container..."
-	bash "${desktop_installer}"
+	log "Installing the optional Nexus Desktop ${NEXUS_DESKTOP_EDITION} edition..."
+	bash "${desktop_installer}" --desktop-edition "${NEXUS_DESKTOP_EDITION}"
+}
+
+stage_desktop_runtime() {
+	local raw_base="https://raw.githubusercontent.com/${NEXUS_RELEASE_REPOSITORY}/${NEXUS_BRANCH}"
+	local staging_root
+	local runtime_file
+	local -a runtime_files=(
+		"scripts/install-desktop.sh"
+		"desktop/docker-compose.yml"
+		"desktop/docker-compose.premium.yml"
+		"desktop/Dockerfile.premium"
+		"desktop/scripts/apply-nexus-theme.sh"
+		"desktop/scripts/nexus-install-deb.sh"
+		"desktop/scripts/nexus-install-downloaded-debs.sh"
+		"desktop/assets/desktop/Downloads.desktop"
+		"desktop/assets/desktop/Shared.desktop"
+		"desktop/assets/desktop/Workspace.desktop"
+		"desktop/assets/wallpapers/nexus-cloud-dark.svg"
+		"desktop/assets/welcome/index.html"
+		"desktop/assets/xfce/panel/launcher-2/chromium.desktop"
+		"desktop/assets/xfce/panel/launcher-3/thunar.desktop"
+		"desktop/assets/xfce/panel/launcher-4/xfce4-terminal.desktop"
+		"desktop/assets/xfce/panel/launcher-5/workspace.desktop"
+		"desktop/assets/xfce/panel/launcher-6/settings.desktop"
+		"desktop/assets/xfce/panel/whiskermenu-1.rc"
+		"desktop/assets/xfce/terminal/terminalrc"
+		"desktop/assets/xfce/xfconf/xfce-perchannel-xml/thunar.xml"
+		"desktop/assets/xfce/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
+		"desktop/assets/xfce/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+		"desktop/assets/xfce/xfconf/xfce-perchannel-xml/xfwm4.xml"
+		"desktop/assets/xfce/xfconf/xfce-perchannel-xml/xsettings.xml"
+	)
+
+	log "Downloading the optional Nexus Desktop runtime payload..."
+	mkdir -p "${NEXUS_STATE_ROOT}"
+	staging_root="$(mktemp -d "${NEXUS_STATE_ROOT}/desktop-installer.staging.XXXXXX")"
+
+	for runtime_file in "${runtime_files[@]}"; do
+		mkdir -p "${staging_root}/$(dirname "${runtime_file}")"
+		if ! curl --retry 3 --retry-delay 2 -fsSL \
+			"${raw_base}/${runtime_file}" \
+			-o "${staging_root}/${runtime_file}"; then
+			rm -rf "${staging_root}"
+			fail "Unable to download ${runtime_file}."
+		fi
+	done
+
+	chmod 755 \
+		"${staging_root}/scripts/install-desktop.sh" \
+		"${staging_root}/desktop/scripts/"*.sh
+	rm -rf "${NEXUS_DESKTOP_ROOT}"
+	mv "${staging_root}" "${NEXUS_DESKTOP_ROOT}"
 }
 
 get_casaos_port() {
@@ -397,6 +456,7 @@ print_nexus_summary() {
 	if (( NEXUS_WITH_DESKTOP == 1 )); then
 		printf '\nNexus Desktop URL:\n'
 		printf 'https://SERVER_IP:6901\n'
+		printf 'Desktop edition: %s\n' "${NEXUS_DESKTOP_EDITION}"
 		warn "Nexus Desktop uses a self-signed HTTPS certificate during this prototype milestone."
 		warn "Open TCP port 6901 only for your own IP address."
 	else

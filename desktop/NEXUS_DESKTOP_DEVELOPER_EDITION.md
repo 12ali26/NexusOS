@@ -39,6 +39,16 @@ docker compose -f docker-compose.yml -f docker-compose.premium.yml build --pull 
 docker compose -f docker-compose.yml -f docker-compose.premium.yml up -d --force-recreate
 ```
 
+Install through the streamed Nexus Cloud installer:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --with-desktop --desktop-edition developer
+```
+
+The streamed installer stages the required desktop runtime files and builds
+the same image locally. This takes longer than stock startup and requires
+network access to Ubuntu packages and the signed VSCodium repository.
+
 Open the persistent workspace:
 
 ```sh
@@ -77,9 +87,20 @@ desktop service.
 
 ## Known Limits
 
-- Developer Edition remains opt-in until root installer integration is added.
+- Developer Edition remains opt-in with `--desktop-edition developer`.
+- Developer Edition supports `amd64` and `arm64`. Use stock desktop on `armv7`.
 - Official VS Code and Cursor are not baked into the image.
 - Ollama, Docker-in-Docker, heavy shell frameworks, and default editor
   extensions are deferred.
 - Direct access remains `https://SERVER_IP:6901` with prototype HTTPS
   limitations.
+
+## Return to Stock
+
+Persistent files under `/DATA/Nexus` remain intact when switching editions:
+
+```sh
+sudo bash scripts/install-desktop.sh --desktop-edition stock
+cd desktop
+docker compose -f docker-compose.yml up -d --force-recreate
+```

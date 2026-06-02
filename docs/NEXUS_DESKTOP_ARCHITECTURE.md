@@ -76,7 +76,8 @@ The EC2 prototype test confirmed:
   display a certificate warning.
 - There is no Nginx or Caddy reverse proxy yet.
 - The Nexus installer provisions the desktop only when `--with-desktop` is
-  passed.
+  passed. Stock remains the default; Developer Edition is selected explicitly
+  with `--desktop-edition developer`.
 - The Nexus dashboard does not expose a Nexus Desktop app card yet.
 - Nexus Cloud and Nexus Desktop do not share single sign-on yet.
 
@@ -84,8 +85,8 @@ Restrict port `6901` to trusted source IP addresses during testing.
 
 ## Future Plan
 
-1. Keep the optional `--with-desktop` installer path small and explicit while
-   the prototype matures.
+1. Keep the optional `--with-desktop` installer path explicit while the stock
+   and Developer Edition variants mature.
 2. Add a Nexus Desktop card in the Nexus dashboard.
 3. Add Nginx or Caddy reverse-proxy routing with domain and trusted HTTPS
    support.

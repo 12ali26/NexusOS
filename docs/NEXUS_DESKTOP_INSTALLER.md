@@ -12,11 +12,24 @@ From a NexusOS repository checkout:
 sudo bash scripts/install-desktop.sh
 ```
 
+The standalone installer defaults to the stock desktop. Install Developer
+Edition from a repository checkout with:
+
+```sh
+sudo bash scripts/install-desktop.sh --desktop-edition developer
+```
+
 On a fresh server, the main Nexus Cloud installer can run this standalone
 installer after deploying the dashboard:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --with-desktop
+```
+
+To install the dashboard and Developer Edition together:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --with-desktop --desktop-edition developer
 ```
 
 The script:
@@ -27,8 +40,15 @@ The script:
    `/DATA/Nexus/Downloads`, and `/DATA/Nexus/Shared`.
 3. Sets `/DATA/Nexus` ownership to `1000:1000`.
 4. Creates the external Docker network `nexus-network` when it is missing.
-5. Runs `docker compose up -d` from `desktop/`.
+5. Runs the stock Compose service by default. Developer Edition builds the
+   local `nexus-desktop-developer:7b` image and recreates the service with the
+   premium override.
 6. Prints local desktop access URLs.
+
+Streamed Developer Edition installs stage the Compose files, Dockerfile,
+scripts, assets, and XFCE menu configuration before building. The build takes
+longer than stock startup and requires network access to Ubuntu packages and
+the signed VSCodium repository.
 
 ## Open the Desktop
 
@@ -56,9 +76,17 @@ Files persist under:
 The script is safe to run again. Existing folders and the existing
 `nexus-network` are reused, and Docker Compose reconciles the desktop container.
 
+Return to stock without deleting persisted files:
+
+```sh
+sudo bash scripts/install-desktop.sh --desktop-edition stock
+cd desktop
+docker compose -f docker-compose.yml up -d --force-recreate
+```
+
 ## Current Boundaries
 
 - Docker must already be installed.
-- The main Nexus Cloud installer does not call this script yet.
+- Developer Edition supports `amd64` and `arm64`. Use stock desktop on `armv7`.
 - There is no reverse proxy, trusted HTTPS certificate, dashboard card, or
   single sign-on yet.

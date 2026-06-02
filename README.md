@@ -93,7 +93,8 @@ Furthermore, the personal cloud could combine personal data to train personalize
 - Nexus Cloud milestone: [Nexus Desktop](docs/NEXUS_DESKTOP_ARCHITECTURE.md)
   provides an experimental persistent XFCE workspace in the browser, backed by
   shared `/DATA/Nexus` folders. Install it with the dashboard by passing
-  `--with-desktop` to the Nexus Cloud installer.
+  `--with-desktop` to the Nexus Cloud installer. Add
+  `--desktop-edition developer` for the opt-in VSCodium workstation image.
 - Friendly UI designed for home scenarios
   - No code, no forms, intuitive, design for humanity
 - Multiple hardware and base system support

@@ -20,6 +20,13 @@ To install the dashboard and optional Nexus Desktop container together, run:
 curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --with-desktop
 ```
 
+This installs the stock desktop edition by default. To install the Developer
+Edition with VSCodium and the baked workstation tools, run:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --with-desktop --desktop-edition developer
+```
+
 The installer downloads a verified prebuilt Nexus Cloud UI archive, installs
 Docker and CasaOS when needed, deploys the static frontend, and prints possible
 local access URLs. It does not assume that the server has a public IP.
@@ -41,7 +48,17 @@ a reverse proxy, or open firewall ports.
 When `--with-desktop` is passed, the installer runs the standalone Nexus Desktop
 installer after the dashboard UI deploys successfully. It creates the persistent
 `/DATA/Nexus` folders, creates or reuses `nexus-network`, and starts the Webtop
-container. The default dashboard-only behavior remains unchanged.
+container. The default dashboard-only behavior remains unchanged. The stock
+desktop remains the default when `--desktop-edition` is omitted.
+
+The Developer Edition stages its Compose override, Dockerfile, scripts, and
+Nexus assets, then builds `nexus-desktop-developer:7b` locally on the server.
+This takes longer than stock installation and requires network access to Ubuntu
+packages and the signed VSCodium repository. Developer Edition supports `amd64`
+and `arm64`; use stock desktop on `armv7`.
+
+Passing `--desktop-edition` without `--with-desktop` is an error because desktop
+installation remains an explicit opt-in.
 
 CasaOS itself runs as host services. Docker is used for applications managed by
 CasaOS. The Nexus Cloud overlay is a static frontend archive, so normal installs
@@ -99,6 +116,18 @@ sudo systemctl restart casaos
 ```
 
 Use the exact backup path printed by your installer run.
+
+## Return Developer Edition to Stock
+
+Persistent desktop files remain under `/DATA/Nexus`. To replace Developer
+Edition with the stock Webtop container without deleting those files:
+
+```sh
+cd ~/NexusOS
+sudo bash scripts/install-desktop.sh --desktop-edition stock
+cd desktop
+docker compose -f docker-compose.yml up -d --force-recreate
+```
 
 ## Platforms
 
