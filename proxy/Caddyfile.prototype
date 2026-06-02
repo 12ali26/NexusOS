@@ -1,0 +1,17 @@
+:8088 {
+	handle_path /desktop/* {
+		reverse_proxy https://nexus-desktop:3001 {
+			transport http {
+				tls_insecure_skip_verify
+			}
+		}
+	}
+
+	handle /desktop {
+		redir * /desktop/ 308
+	}
+
+	handle {
+		reverse_proxy host.docker.internal:80
+	}
+}
