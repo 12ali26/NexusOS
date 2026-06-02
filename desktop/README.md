@@ -73,6 +73,9 @@ adds a lightweight developer workstation:
 - A local Nexus Desktop browser welcome page with optional web links.
 - Git, curl, wget, Python 3, virtual environments, build tools, unzip, jq, nano,
   htop, and related workstation utilities.
+- XDG desktop portal services with the GTK backend for portal-aware GUI apps.
+- GVfs backends, thumbnails, archive handling, and Thunar volume integration
+  for everyday file-manager workflows.
 - Ubuntu Node.js 22 LTS with Corepack.
 - VSCodium as the baked editor, available from the Whisker Menu and terminal:
 
@@ -231,8 +234,9 @@ for the persistence model and future app strategy.
 
 ## Electron App Launchers
 
-Milestone 8B repairs GUI launchers for supported Electron coding apps inside
-the container:
+Milestone 8B repairs GUI launchers for Electron apps inside the container.
+Nexus automatically recognizes packaged Electron applications and explicitly
+supports:
 
 - VSCodium
 - VS Code
@@ -244,9 +248,22 @@ On desktop startup, Nexus copies installed system launchers into:
 /config/.local/share/applications
 ```
 
-Each user-level launcher keeps its original name and icon while adding the
-container-safe `--no-sandbox` flag to `Exec=` actions. The repair is
-idempotent, so restarts do not duplicate flags.
+Each user-level launcher keeps its original name, icon, file arguments, and
+folder arguments while adding container-safe flags to `Exec=` actions:
+
+```text
+GTK_USE_PORTAL=0
+--no-sandbox
+--xdg-portal-required-version=999
+```
+
+The GTK fallback avoids container portal issues when selecting files or
+folders from an Electron application. The repair is idempotent, so restarts do
+not duplicate flags. Ordinary non-Electron applications continue using their
+vendor desktop files without Nexus-specific changes.
+
+Electron documents `--xdg-portal-required-version` as the Linux file-dialog
+portal threshold switch: <https://www.electronjs.org/docs/latest/api/command-line-switches#--xdg-portal-required-versionversion>.
 
 After pulling Milestone 8B, recreate the selected desktop variant once so the
 startup-hook mount is added:
@@ -271,6 +288,56 @@ docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications
 docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications/code.desktop
 docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications/cursor.desktop
 ```
+
+For an unusual Electron package that Nexus cannot discover automatically, add
+its desktop-file basename to:
+
+```text
+/config/nexus/electron-launchers.conf
+```
+
+Use one filename per line, such as `my-editor.desktop`, then run the repair
+command again.
+
+## Persist Installed `.deb` Apps
+
+Applications installed through `nexus-install-deb.sh` are copied into:
+
+```text
+/config/nexus/packages
+```
+
+Because `/config` maps to `/DATA/Nexus/Home`, the downloaded package remains
+available after container recreation. At startup, Nexus restores cached `.deb`
+applications that are missing from the current container before repairing
+their launchers. Review restore logs with:
+
+```sh
+docker exec nexus-desktop tail -100 /config/nexus/logs/app-restore.log
+```
+
+To stop restoring an application, remove its cached `.deb` from
+`/config/nexus/packages` and uninstall it normally.
+
+## Install Ubuntu Repository Apps
+
+Users can install ordinary Ubuntu applications by package name. Nexus records
+the selected packages under persistent `/config` and restores them after
+container recreation:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-apt.sh vlc gimp
+```
+
+The persistent package list is:
+
+```text
+/config/nexus/apt-packages.txt
+```
+
+This workflow does not limit users to a Nexus-curated catalog. Users still have
+their normal Linux desktop and terminal; the helper adds reproducible restore
+behavior for applications installed from Ubuntu repositories.
 
 ### Return to Stock Desktop
 
@@ -324,15 +391,16 @@ Then force reapply and restart the container.
 
 ### App Opens From Terminal but Not From Icon
 
-Electron coding apps may require `--no-sandbox` inside the Webtop container.
-Terminal commands can work while the unpatched XFCE menu launcher appears to
-do nothing. Repair the user-level launchers:
+Electron apps may require sandbox and file-dialog compatibility flags inside
+the Webtop container. Terminal commands can work while an unpatched XFCE menu
+launcher appears to do nothing, or while a file/folder chooser does not return
+the selected path to the editor. Repair the user-level launchers:
 
 ```sh
 docker exec -u abc nexus-desktop bash /config/nexus/scripts/fix-electron-launchers.sh
 ```
 
-Then reopen the XFCE menu and launch VSCodium, VS Code, or Cursor normally.
+Then reopen the XFCE menu and launch the application normally.
 
 ## Known Limitations
 
@@ -345,10 +413,9 @@ Then reopen the XFCE menu and launch VSCodium, VS Code, or Cursor normally.
   single sign-on yet.
 - The dashboard card can open the desktop, but deeper lifecycle integration is
   deferred.
-- Applications installed manually inside the running container, including VS
-  Code installed from a `.deb`, may not survive a full container recreation
-  unless they are baked into an image or provisioned by a future app-install
-  workflow.
+- Applications installed manually with raw `apt` commands may not survive a
+  full container recreation. Applications installed through the Nexus `.deb`
+  helper or apt-package helper are restored from persistent `/config`.
 - Milestone 7A provides a terminal helper for `.deb` applications. A future
   Thunar action remains deferred: `Right-click .deb -> Install with Nexus`.
 - Developer Edition supports `amd64` and `arm64`. Use stock desktop on `armv7`.

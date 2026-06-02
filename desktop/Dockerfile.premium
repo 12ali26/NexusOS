@@ -13,6 +13,8 @@ RUN rm -f /etc/apt/sources.list.d/nodesource.sources && \
         gdebi-core \
         git \
         gnupg \
+        gvfs \
+        gvfs-backends \
         htop \
         jq \
         nano \
@@ -22,9 +24,15 @@ RUN rm -f /etc/apt/sources.list.d/nodesource.sources && \
         python3-pip \
         python3-venv \
         software-properties-common \
+        thunar-volman \
+        tumbler \
         unzip \
         wget \
+        xdg-user-dirs \
+        xdg-desktop-portal \
+        xdg-desktop-portal-gtk \
         xdg-utils \
+        file-roller \
         xfce4-whiskermenu-plugin && \
     wget -qO /tmp/vscodium.gpg \
         https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/raw/master/pub.gpg && \

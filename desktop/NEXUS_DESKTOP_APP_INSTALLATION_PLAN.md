@@ -102,24 +102,63 @@ be part of the maintained workstation image.
 
 ## GUI Launcher Repair Milestone 8B
 
-VSCodium, VS Code, and Cursor are Electron applications. Inside Webtop, their
-terminal commands can work with `--no-sandbox` while their default XFCE menu
-launchers appear to do nothing.
+Electron applications such as VSCodium, VS Code, and Cursor can launch from a
+terminal while their default XFCE menu launchers appear to do nothing. Portal
+integration can also prevent a selected file or folder from returning to the
+editor.
 
-Nexus Desktop now runs an idempotent startup hook that copies installed system
-desktop files into:
+Nexus Desktop runs an idempotent startup hook that discovers packaged Electron
+applications and copies their installed system desktop files into:
 
 ```text
 /config/.local/share/applications
 ```
 
-The user-level copies preserve the original launcher names and icons and add
-`--no-sandbox` to each `Exec=` action. After installing a supported `.deb`,
-repair launchers immediately without restarting:
+The user-level copies preserve names, icons, and path arguments while adding
+`GTK_USE_PORTAL=0`, `--no-sandbox`, and
+`--xdg-portal-required-version=999`. These flags use GTK chooser fallback
+behavior inside Webtop. After installing a `.deb`, repair launchers immediately
+without restarting:
 
 ```sh
 docker exec -u abc nexus-desktop bash /config/nexus/scripts/fix-electron-launchers.sh
 ```
+
+Unusual Electron desktop-file names can be listed one per line in
+`/config/nexus/electron-launchers.conf`. Ordinary non-Electron applications
+keep their vendor desktop launchers unchanged.
+
+## Persistent `.deb` Restore
+
+The Nexus `.deb` helper copies successfully installed packages into:
+
+```text
+/config/nexus/packages
+```
+
+A startup hook restores cached packages that are missing after container
+recreation, then the launcher hook refreshes GUI compatibility. User files
+remain independent under `/DATA/Nexus`, and restore logs are appended to:
+
+```text
+/config/nexus/logs/app-restore.log
+```
+
+Raw manual `apt` installs are not cached automatically. To disable restore for
+an application, remove its cached `.deb` and uninstall it normally.
+
+## Ubuntu Repository Apps
+
+Users are not restricted to downloaded `.deb` files or a curated app catalog.
+Install normal Ubuntu repository packages with:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-apt.sh vlc gimp
+```
+
+The helper records package names in `/config/nexus/apt-packages.txt`. The same
+startup restore hook reinstalls missing repository packages after container
+recreation. Users can edit the persistent list directly when needed.
 
 ## Current Limitations
 

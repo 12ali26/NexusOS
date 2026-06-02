@@ -5,6 +5,8 @@ set -Eeuo pipefail
 readonly CONFIG_ROOT="${NEXUS_DESKTOP_CONFIG_ROOT:-/config}"
 readonly LOG_DIR="${CONFIG_ROOT}/nexus/logs"
 readonly LOG_FILE="${LOG_DIR}/app-install.log"
+readonly PACKAGE_DIR="${CONFIG_ROOT}/nexus/packages"
+readonly LAUNCHER_REPAIR_SCRIPT="${CONFIG_ROOT}/nexus/scripts/fix-electron-launchers.sh"
 
 log() {
 	printf '[Nexus App Installer] %s\n' "$*"
@@ -49,6 +51,7 @@ resolve_deb_path() {
 
 install_deb() {
 	local deb_path="$1"
+	local package_name
 
 	[[ -f "${deb_path}" ]] || fail "File does not exist: ${deb_path}"
 	[[ "${deb_path,,}" == *.deb ]] || fail "Expected a .deb file: ${deb_path}"
@@ -63,11 +66,25 @@ install_deb() {
 	log "Installing package..."
 	sudo apt install "${deb_path}" -y
 
+	log "Saving package for restore after container recreation..."
+	package_name="$(dpkg-deb --field "${deb_path}" Package 2>/dev/null || true)"
+	[[ -n "${package_name}" ]] || fail "Installed package metadata is missing its package name: ${deb_path}"
+	sudo mkdir -p "${PACKAGE_DIR}"
+	sudo install -m 0644 "${deb_path}" "${PACKAGE_DIR}/${package_name}.deb"
+	sudo chown -R "$(id -u):$(id -g)" "${PACKAGE_DIR}"
+
 	if command -v update-desktop-database >/dev/null 2>&1; then
 		log "Refreshing desktop application database..."
 		update-desktop-database
 	else
 		log "Desktop database refresh tool is unavailable; skipping."
+	fi
+
+	if [[ -x "${LAUNCHER_REPAIR_SCRIPT}" ]]; then
+		log "Refreshing container-safe application launchers..."
+		bash "${LAUNCHER_REPAIR_SCRIPT}"
+	else
+		log "Launcher repair helper is unavailable; restart Nexus Desktop after installing an Electron application."
 	fi
 
 	log "Installation completed successfully."

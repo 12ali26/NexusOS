@@ -18,6 +18,8 @@ baking common development tools into a reproducible image.
 - Python 3, pip, and virtual environments.
 - Ubuntu Node.js 22 LTS with Corepack.
 - Build tools, unzip, jq, nano, and htop.
+- XDG desktop portal services with the GTK backend for portal-aware GUI apps.
+- GVfs backends, thumbnailing, archive handling, and Thunar volume integration.
 - VSCodium as the baked editor.
 - Arc-Dark, Papirus-Dark, Inter fonts, and the Nexus XFCE profile.
 
@@ -76,10 +78,11 @@ execution.
 
 ## GUI Launcher Repair
 
-Milestone 8B runs a startup hook that creates user-level launchers for
-installed VSCodium, VS Code, and Cursor desktop files. It preserves application
-names and icons while adding the container-safe `--no-sandbox` flag to each
-`Exec=` action. The generated launchers live under:
+Milestone 8B runs a startup hook that creates user-level launchers for detected
+Electron applications, including VSCodium, VS Code, and Cursor. It preserves
+application names, icons, and path arguments while adding container-safe
+sandbox and GTK file-dialog fallback flags to each `Exec=` action. The
+generated launchers live under:
 
 ```text
 /config/.local/share/applications
@@ -96,6 +99,22 @@ Verify VSCodium:
 ```sh
 docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications/codium.desktop
 ```
+
+For an Electron package that is not discovered automatically, add its desktop
+filename to `/config/nexus/electron-launchers.conf` and rerun the repair.
+
+Applications installed through `nexus-install-deb.sh` are cached under
+`/config/nexus/packages` and restored when missing after container recreation.
+Restore output is appended to `/config/nexus/logs/app-restore.log`.
+
+Install Ubuntu repository applications with:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-apt.sh vlc gimp
+```
+
+Selected repository packages persist in `/config/nexus/apt-packages.txt` and
+are restored when missing after recreation.
 
 ## Persistence Model
 
