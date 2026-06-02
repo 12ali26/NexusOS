@@ -1,4 +1,6 @@
-:8088 {
+https://:8088 {
+	tls internal
+
 	handle_path /desktop/* {
 		reverse_proxy https://nexus-desktop:3001 {
 			transport http {

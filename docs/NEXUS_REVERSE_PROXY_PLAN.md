@@ -33,8 +33,8 @@ clear path to domain-based automatic HTTPS later.
 ### Option A: Path Routing
 
 ```text
-http://SERVER_IP:8088/
-http://SERVER_IP:8088/desktop/
+https://SERVER_IP:8088/
+https://SERVER_IP:8088/desktop/
 ```
 
 The prototype uses this model. Caddy proxies `/` to CasaOS and strips the
@@ -75,7 +75,7 @@ available until proxied desktop behavior is proven.
 
 ```text
 Browser
-  -> HTTP on host port 8088
+  -> HTTPS on host port 8088 using Caddy's internal certificate
   -> Caddy container on nexus-network
      -> /          -> host.docker.internal:80 -> CasaOS dashboard
      -> /desktop/* -> nexus-desktop:3001      -> Webtop HTTPS and XFCE
@@ -99,8 +99,9 @@ service.
 2. Keep direct Nexus Desktop access on `https://SERVER_IP:6901`.
 3. Start the proxy manually with `cd proxy && docker compose up -d`.
 4. Open TCP port `8088` only for the tester's IP address.
-5. Confirm `http://SERVER_IP:8088/` loads the dashboard.
-6. Test `http://SERVER_IP:8088/desktop/`, including WebSocket-backed desktop
+5. Accept the prototype certificate warning and confirm
+   `https://SERVER_IP:8088/` loads the dashboard.
+6. Test `https://SERVER_IP:8088/desktop/`, including WebSocket-backed desktop
    interaction.
 7. Stop the proxy with `cd proxy && docker compose down`.
 8. Confirm the original port `80` dashboard and direct port `6901` desktop still

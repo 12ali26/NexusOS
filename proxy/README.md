@@ -9,8 +9,8 @@ replace the working dashboard on port `80` or the direct desktop URL on port
 
 | Test URL | Upstream |
 | --- | --- |
-| `http://SERVER_IP:8088/` | CasaOS dashboard on host port `80` |
-| `http://SERVER_IP:8088/desktop/` | Nexus Desktop on `nexus-desktop:3001` |
+| `https://SERVER_IP:8088/` | CasaOS dashboard on host port `80` |
+| `https://SERVER_IP:8088/desktop/` | Nexus Desktop on `nexus-desktop:3001` |
 
 Caddy joins the existing external Docker network `nexus-network`. Dashboard
 requests use Docker's `host-gateway` mapping to reach CasaOS on the server.
@@ -29,8 +29,8 @@ docker compose up -d
 Open TCP port `8088` for your IP address only, then test:
 
 ```text
-http://YOUR_SERVER_IP:8088/
-http://YOUR_SERVER_IP:8088/desktop/
+https://YOUR_SERVER_IP:8088/
+https://YOUR_SERVER_IP:8088/desktop/
 ```
 
 Inspect status and logs:
@@ -57,8 +57,9 @@ https://YOUR_SERVER_IP:6901
 
 ## Known Risks
 
-- This is an HTTP test entrypoint on port `8088`. It does not provide trusted
-  public HTTPS.
+- This is an HTTPS test entrypoint on port `8088` using Caddy's internal
+  certificate authority. It does not provide browser-trusted public HTTPS, so
+  expect a certificate warning during testing.
 - Webtop uses a self-signed certificate. The prototype disables TLS certificate
   verification only for the private Caddy-to-Webtop connection. Do not carry
   this shortcut into production.
