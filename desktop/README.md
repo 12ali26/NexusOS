@@ -48,6 +48,16 @@ The standalone script creates the folders, reuses or creates `nexus-network`,
 starts the desktop with Docker Compose, and prints local access URLs. See
 [NEXUS_DESKTOP_INSTALLER.md](../docs/NEXUS_DESKTOP_INSTALLER.md) for details.
 
+### Main Installer Option
+
+On a fresh server, install the Nexus Cloud dashboard and Nexus Desktop together:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --with-desktop
+```
+
+Without `--with-desktop`, the main installer keeps its dashboard-only behavior.
+
 ### Manual Install
 
 Create the persistent folders:
@@ -147,8 +157,8 @@ The prototype was tested successfully on an EC2 Linux server:
   testing and expect a browser certificate warning.
 - There is no reverse proxy, public domain, trusted HTTPS certificate, or Nexus
   single sign-on yet.
-- The main Nexus Cloud installer does not call the standalone desktop installer
-  yet.
+- The main Nexus Cloud installer provisions the desktop only when
+  `--with-desktop` is passed.
 - The Nexus dashboard does not have a Nexus Desktop card yet.
 - The container uses the upstream Ubuntu XFCE image without extra development
   tools or a custom Nexus desktop theme.

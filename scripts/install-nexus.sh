@@ -7,11 +7,13 @@ readonly NEXUS_RELEASE_REPOSITORY="${NEXUS_RELEASE_REPOSITORY:-12ali26/NexusOS}"
 readonly NEXUS_BRANCH="${NEXUS_BRANCH:-main}"
 readonly NEXUS_INSTALL_ROOT="${NEXUS_INSTALL_ROOT:-/opt/nexusos}"
 readonly NEXUS_STATE_ROOT="${NEXUS_STATE_ROOT:-/var/lib/nexus-cloud}"
+readonly NEXUS_DESKTOP_ROOT="${NEXUS_DESKTOP_ROOT:-${NEXUS_STATE_ROOT}/desktop-installer}"
 readonly SCRIPT_SOURCE="${BASH_SOURCE[0]:-}"
 readonly SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_SOURCE:-.}")" 2>/dev/null && pwd || pwd)"
 readonly LIB_DIR="${SCRIPT_DIR}/lib"
 
 NEXUS_BUILD_FROM_SOURCE=0
+NEXUS_WITH_DESKTOP=0
 NEXUS_VERSION=""
 NEXUS_UI_SOURCE_ROOT=""
 NEXUS_UI_CHECKSUM=""
@@ -37,6 +39,7 @@ Usage: install-nexus.sh [options]
 Options:
   --version TAG         Install a specific Nexus UI release, for example nexus-ui-v0.1.0.
   --build-from-source   Clone or update NexusOS and build the UI locally. For development only.
+  --with-desktop        Install the optional Nexus Desktop container after the dashboard.
   --help                Show this help text.
 EOF
 }
@@ -51,6 +54,10 @@ parse_args() {
 				;;
 			--build-from-source)
 				NEXUS_BUILD_FROM_SOURCE=1
+				shift
+				;;
+			--with-desktop)
+				NEXUS_WITH_DESKTOP=1
 				shift
 				;;
 			--help|-h)
@@ -333,6 +340,32 @@ restart_casaos_service() {
 	fail "casaos.service restart verification failed."
 }
 
+install_optional_desktop() {
+	local local_installer="${SCRIPT_DIR}/install-desktop.sh"
+	local local_compose="${SCRIPT_DIR}/../desktop/docker-compose.yml"
+	local desktop_installer
+
+	if [[ -f "${local_installer}" && -f "${local_compose}" ]]; then
+		desktop_installer="${local_installer}"
+	else
+		log "Downloading the optional Nexus Desktop installer..."
+		mkdir -p "${NEXUS_DESKTOP_ROOT}/scripts" "${NEXUS_DESKTOP_ROOT}/desktop"
+		curl --retry 3 --retry-delay 2 -fsSL \
+			"https://raw.githubusercontent.com/${NEXUS_RELEASE_REPOSITORY}/${NEXUS_BRANCH}/scripts/install-desktop.sh" \
+			-o "${NEXUS_DESKTOP_ROOT}/scripts/install-desktop.sh" ||
+			fail "Unable to download scripts/install-desktop.sh."
+		curl --retry 3 --retry-delay 2 -fsSL \
+			"https://raw.githubusercontent.com/${NEXUS_RELEASE_REPOSITORY}/${NEXUS_BRANCH}/desktop/docker-compose.yml" \
+			-o "${NEXUS_DESKTOP_ROOT}/desktop/docker-compose.yml" ||
+			fail "Unable to download desktop/docker-compose.yml."
+		chmod 755 "${NEXUS_DESKTOP_ROOT}/scripts/install-desktop.sh"
+		desktop_installer="${NEXUS_DESKTOP_ROOT}/scripts/install-desktop.sh"
+	fi
+
+	log "Installing the optional Nexus Desktop container..."
+	bash "${desktop_installer}"
+}
+
 get_casaos_port() {
 	local gateway_config="/etc/casaos/gateway.ini"
 	local port=""
@@ -360,6 +393,16 @@ print_nexus_summary() {
 	printf '\nOpen port %s in your firewall or VPS security group if remote access is required.\n' "${port}"
 	printf 'Installed apps may use additional ports. Open only the ports you intentionally need.\n'
 	printf 'This experimental installer does not configure HTTPS, authentication, or a reverse proxy.\n'
+
+	if (( NEXUS_WITH_DESKTOP == 1 )); then
+		printf '\nNexus Desktop URL:\n'
+		printf 'https://SERVER_IP:6901\n'
+		warn "Nexus Desktop uses a self-signed HTTPS certificate during this prototype milestone."
+		warn "Open TCP port 6901 only for your own IP address."
+	else
+		printf '\nNexus Desktop was not installed. You can add it later from a NexusOS checkout:\n'
+		printf 'sudo bash scripts/install-desktop.sh\n'
+	fi
 }
 
 main() {
@@ -378,6 +421,9 @@ main() {
 	fi
 
 	deploy_nexus_ui
+	if (( NEXUS_WITH_DESKTOP == 1 )); then
+		install_optional_desktop
+	fi
 	print_nexus_summary
 }
 

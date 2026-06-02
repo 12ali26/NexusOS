@@ -12,6 +12,13 @@ From a NexusOS repository checkout:
 sudo bash scripts/install-desktop.sh
 ```
 
+On a fresh server, the main Nexus Cloud installer can run this standalone
+installer after deploying the dashboard:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --with-desktop
+```
+
 The script:
 
 1. Confirms that Docker, the Docker Compose plugin, and

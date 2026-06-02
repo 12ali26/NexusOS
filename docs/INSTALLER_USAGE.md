@@ -12,6 +12,14 @@ On a fresh supported Linux server, run:
 curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash
 ```
 
+This installs the Nexus Cloud dashboard and core services only.
+
+To install the dashboard and optional Nexus Desktop container together, run:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/12ali26/NexusOS/main/scripts/install-nexus.sh | sudo bash -s -- --with-desktop
+```
+
 The installer downloads a verified prebuilt Nexus Cloud UI archive, installs
 Docker and CasaOS when needed, deploys the static frontend, and prints possible
 local access URLs. It does not assume that the server has a public IP.
@@ -29,6 +37,11 @@ local access URLs. It does not assume that the server has a public IP.
 
 The installer does not rename backend services, install default apps, configure
 a reverse proxy, or open firewall ports.
+
+When `--with-desktop` is passed, the installer runs the standalone Nexus Desktop
+installer after the dashboard UI deploys successfully. It creates the persistent
+`/DATA/Nexus` folders, creates or reuses `nexus-network`, and starts the Webtop
+container. The default dashboard-only behavior remains unchanged.
 
 CasaOS itself runs as host services. Docker is used for applications managed by
 CasaOS. The Nexus Cloud overlay is a static frontend archive, so normal installs
@@ -113,6 +126,10 @@ repositories.
 Open the CasaOS dashboard port, usually port `80`, in the provider firewall or
 security group only when remote access is needed. The installer prints local
 addresses and does not attempt to discover a public address.
+
+When Nexus Desktop is enabled, also open TCP port `6901` only for your own IP
+address. Visit `https://YOUR_SERVER_IP:6901` and expect a self-signed certificate
+warning during the prototype milestone.
 
 ### Home Server
 

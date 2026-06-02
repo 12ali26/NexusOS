@@ -75,7 +75,8 @@ The EC2 prototype test confirmed:
 - Webtop currently uses its default self-signed HTTPS certificate, so browsers
   display a certificate warning.
 - There is no Nginx or Caddy reverse proxy yet.
-- The Nexus installer does not provision the desktop yet.
+- The Nexus installer provisions the desktop only when `--with-desktop` is
+  passed.
 - The Nexus dashboard does not expose a Nexus Desktop app card yet.
 - Nexus Cloud and Nexus Desktop do not share single sign-on yet.
 
@@ -83,8 +84,8 @@ Restrict port `6901` to trusted source IP addresses during testing.
 
 ## Future Plan
 
-1. Add an optional Nexus installer flag that creates the folders, creates
-   `nexus-network`, and starts the desktop Compose service.
+1. Keep the optional `--with-desktop` installer path small and explicit while
+   the prototype matures.
 2. Add a Nexus Desktop card in the Nexus dashboard.
 3. Add Nginx or Caddy reverse-proxy routing with domain and trusted HTTPS
    support.
