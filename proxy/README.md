@@ -10,11 +10,13 @@ replace the working dashboard on port `80` or the direct desktop URL on port
 | Test URL | Upstream |
 | --- | --- |
 | `https://SERVER_IP:8088/` | CasaOS dashboard on host port `80` |
-| `https://SERVER_IP:8088/desktop/` | Nexus Desktop on `nexus-desktop:3001` |
+| `https://SERVER_IP:8088/desktop/` | Nexus Desktop on `nexus-desktop:3000` |
 
 Caddy joins the existing external Docker network `nexus-network`. Dashboard
 requests use Docker's `host-gateway` mapping to reach CasaOS on the server.
-Desktop requests use the `nexus-desktop` container directly over Webtop HTTPS.
+Desktop requests use the `nexus-desktop` container directly over Webtop's
+internal HTTP port `3000`. Direct browser access remains available through the
+published Webtop HTTPS port at `https://SERVER_IP:6901`.
 
 ## Start the Prototype
 
@@ -60,9 +62,10 @@ https://YOUR_SERVER_IP:6901
 - This is an HTTPS test entrypoint on port `8088` using Caddy's internal
   certificate authority. It does not provide browser-trusted public HTTPS, so
   expect a certificate warning during testing.
-- Webtop uses a self-signed certificate. The prototype disables TLS certificate
-  verification only for the private Caddy-to-Webtop connection. Do not carry
-  this shortcut into production.
+- Webtop exposes internal HTTP on container port `3000` and HTTPS on container
+  port `3001`. The path-routing prototype proxies Caddy to
+  `http://nexus-desktop:3000`. Do not proxy plain HTTP to port `3001`; that
+  produces `Client sent an HTTP request to an HTTPS server.`
 - Caddy proxies WebSocket upgrades automatically, but Webtop may still assume it
   is mounted at `/`. The `/desktop/` route strips its prefix before proxying.
   Browser assets, redirects, or WebSocket endpoints may reveal path-routing
