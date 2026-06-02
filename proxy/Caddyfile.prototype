@@ -1,15 +1,11 @@
-https://:8088 {
-	tls internal
+dashboard.example.com {
+	reverse_proxy host.docker.internal:80
+}
 
-	handle_path /desktop/* {
-		reverse_proxy http://nexus-desktop:3000
-	}
-
-	handle /desktop {
-		redir * /desktop/ 308
-	}
-
-	handle {
-		reverse_proxy host.docker.internal:80
+desktop.example.com {
+	reverse_proxy https://nexus-desktop:3001 {
+		transport http {
+			tls_insecure_skip_verify
+		}
 	}
 }

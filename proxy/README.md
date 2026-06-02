@@ -1,76 +1,60 @@
-# Nexus Reverse Proxy Prototype
+# Nexus Reverse Proxy Plan
 
-This directory contains a non-invasive Caddy prototype for testing a single
-entrypoint in front of the Nexus Cloud dashboard and Nexus Desktop. It does not
-replace the working dashboard on port `80` or the direct desktop URL on port
-`6901`.
+This directory contains a reference Caddy configuration for a future
+subdomain-based proxy. It is not required for the current Nexus Cloud prototype.
+Do not run it on an IP-only server unless you understand the DNS, certificate,
+and port-mapping changes needed for your environment.
 
-## Routes
+## Current Stable Access
 
-| Test URL | Upstream |
-| --- | --- |
-| `https://SERVER_IP:8088/` | CasaOS dashboard on host port `80` |
-| `https://SERVER_IP:8088/desktop/` | Nexus Desktop on `nexus-desktop:3000` |
-
-Caddy joins the existing external Docker network `nexus-network`. Dashboard
-requests use Docker's `host-gateway` mapping to reach CasaOS on the server.
-Desktop requests use the `nexus-desktop` container directly over Webtop's
-internal HTTP port `3000`. Direct browser access remains available through the
-published Webtop HTTPS port at `https://SERVER_IP:6901`.
-
-## Start the Prototype
-
-Nexus Desktop must already be running and `nexus-network` must already exist.
-From the repository root:
-
-```sh
-cd proxy
-docker compose up -d
-```
-
-Open TCP port `8088` for your IP address only, then test:
+Use the direct URLs during EC2 and IP-only development:
 
 ```text
-https://YOUR_SERVER_IP:8088/
-https://YOUR_SERVER_IP:8088/desktop/
+http://SERVER_IP
+https://SERVER_IP:6901
 ```
 
-Inspect status and logs:
+The first URL opens the Nexus Cloud dashboard. The second opens Nexus Desktop
+directly through Webtop's published HTTPS port. Keep port `6901` restricted to
+trusted tester IP addresses.
 
-```sh
-docker compose ps
-docker compose logs --tail=100
-```
+## Preferred Production Direction
 
-## Stop the Prototype
+Use separate DNS names so Webtop can remain mounted at `/`:
+
+| Public URL | Upstream |
+| --- | --- |
+| `https://dashboard.example.com` | CasaOS dashboard on host port `80` |
+| `https://desktop.example.com` | Nexus Desktop on `nexus-desktop:3001` |
+
+The example [Caddyfile](./Caddyfile.prototype) assumes both names resolve to the
+server and Caddy can obtain browser-trusted certificates. It is a planning
+example, not a ready-to-run IP-only deployment.
+
+## Why Path Routing Is Retired
+
+The `/desktop/` experiment is currently not recommended. Webtop and noVNC use
+secure browser APIs, WebSockets, redirects, and asset paths that are fragile
+behind a rewritten prefix. Testing also exposed HTTP-versus-HTTPS upstream
+mismatches. A dedicated desktop subdomain avoids prefix rewriting.
+
+## Roll Back an Experiment
+
+If a proxy container is running from earlier testing, remove it with:
 
 ```sh
 cd proxy
 docker compose down
 ```
 
-Stopping the prototype leaves the working dashboard and direct Nexus Desktop
-access unchanged:
+This does not stop CasaOS or Nexus Desktop. The direct URLs remain available.
 
-```text
-http://YOUR_SERVER_IP
-https://YOUR_SERVER_IP:6901
-```
+## Notes
 
-## Known Risks
-
-- This is an HTTPS test entrypoint on port `8088` using Caddy's internal
-  certificate authority. It does not provide browser-trusted public HTTPS, so
-  expect a certificate warning during testing.
-- Webtop exposes internal HTTP on container port `3000` and HTTPS on container
-  port `3001`. The path-routing prototype proxies Caddy to
-  `http://nexus-desktop:3000`. Do not proxy plain HTTP to port `3001`; that
-  produces `Client sent an HTTP request to an HTTPS server.`
-- Caddy proxies WebSocket upgrades automatically, but Webtop may still assume it
-  is mounted at `/`. The `/desktop/` route strips its prefix before proxying.
-  Browser assets, redirects, or WebSocket endpoints may reveal path-routing
-  incompatibilities during testing.
-- If path routing is unreliable, prefer a dedicated desktop subdomain such as
-  `desktop.example.com`.
-- Do not close port `6901` during this prototype milestone. It remains the
-  working desktop fallback.
+- Caddy joins the external Docker network `nexus-network`.
+- Dashboard traffic reaches CasaOS through Docker's `host-gateway` mapping.
+- Desktop traffic uses Webtop's internal HTTPS port `3001`.
+- The example disables certificate verification only for the private
+  Caddy-to-Webtop hop because Webtop uses a self-signed certificate.
+- Production deployment still needs real DNS, trusted HTTPS, firewall policy,
+  and a reviewed port-publishing layout.
