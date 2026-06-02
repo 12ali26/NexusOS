@@ -90,6 +90,9 @@ Furthermore, the personal cloud could combine personal data to train personalize
 
 ## Features
 
+- Nexus Cloud milestone: [Nexus Desktop](docs/NEXUS_DESKTOP_ARCHITECTURE.md)
+  provides an experimental persistent XFCE workspace in the browser, backed by
+  shared `/DATA/Nexus` folders.
 - Friendly UI designed for home scenarios
   - No code, no forms, intuitive, design for humanity
 - Multiple hardware and base system support

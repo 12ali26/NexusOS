@@ -1,8 +1,26 @@
 # Nexus Desktop Prototype
 
-Nexus Desktop is an experimental browser-accessible Linux desktop for Nexus
+Nexus Desktop is the first working browser-accessible Linux desktop for Nexus
 Cloud. It runs the LinuxServer.io Webtop Ubuntu XFCE image as an isolated Docker
 Compose service. It is not integrated with the Nexus Cloud Go backend yet.
+
+Unlike separate CasaOS apps, Nexus Desktop provides one persistent visual
+workspace with a file manager, desktop session, and shared Nexus folders. Apps
+and files can meet in the same Linux environment instead of feeling like
+disconnected browser tabs backed by unrelated containers.
+
+The current prototype architecture is:
+
+```text
+Browser
+  -> HTTPS on host port 6901
+  -> linuxserver/webtop container
+  -> XFCE desktop
+  -> /DATA/Nexus persistent folders
+```
+
+See [NEXUS_DESKTOP_ARCHITECTURE.md](../docs/NEXUS_DESKTOP_ARCHITECTURE.md) for
+the design direction.
 
 ## Default Port
 
@@ -94,13 +112,38 @@ server:
 | `/DATA/Nexus/Downloads` | `/config/Downloads` |
 | `/DATA/Nexus/Shared` | `/config/Shared` |
 
+## Validated Milestone
+
+The prototype was tested successfully on an EC2 Linux server:
+
+- The Nexus Desktop page opened in a browser over HTTPS on port `6901`.
+- The XFCE desktop and file manager loaded.
+- `/config/Workspace`, `/config/Downloads`, and `/config/Shared` appeared inside
+  the desktop.
+- A file created inside `/config/Workspace` remained available after restarting
+  the container.
+
 ## Known Limitations
 
 - This prototype is not connected to the Nexus Cloud dashboard or Go backend.
+- Port `6901` must be opened manually in the EC2 security group or host
+  firewall.
 - Port `6901` exposes Webtop HTTPS directly using its default self-signed
   certificate. Restrict the EC2 security-group rule to your own IP during
   testing and expect a browser certificate warning.
-- HTTPS, reverse-proxy routing, Nexus authentication, and automatic app
-  installation are intentionally deferred.
+- There is no reverse proxy, public domain, trusted HTTPS certificate, or Nexus
+  single sign-on yet.
+- The Nexus installer does not create folders, create `nexus-network`, or start
+  the desktop container yet.
+- The Nexus dashboard does not have a Nexus Desktop card yet.
 - The container uses the upstream Ubuntu XFCE image without extra development
   tools or a custom Nexus desktop theme.
+
+## Future Direction
+
+- Add an optional Nexus installer flag for desktop provisioning.
+- Add a Nexus Desktop app card in the dashboard.
+- Place the desktop behind Nginx or Caddy with domain and HTTPS support.
+- Use `nexus-network` as the shared app and service network where appropriate.
+- Explore a later Kubernetes or cluster edition after the single-server model is
+  stable.
