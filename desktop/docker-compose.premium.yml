@@ -1,6 +1,6 @@
 services:
   nexus-desktop:
-    image: nexus-desktop-premium:6b
+    image: nexus-desktop-developer:7b
     build:
       context: .
       dockerfile: Dockerfile.premium

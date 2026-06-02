@@ -1,6 +1,6 @@
 # Nexus Desktop UI Plan
 
-## Milestone 6B
+## Milestone 6B and 7B
 
 Nexus Desktop already works as a persistent browser-accessible XFCE workspace,
 but the stock session still looks like a remote lab machine. Milestone 6B adds
@@ -42,8 +42,8 @@ theme hook into `/custom-cont-init.d/apply-nexus-theme.sh`. No packages are
 installed at runtime, and no external theme repositories are cloned.
 
 The base `docker-compose.yml` intentionally remains stock for streamed
-installer compatibility. Repository checkouts opt into premium styling with
-`docker-compose.premium.yml`.
+installer compatibility. Repository checkouts opt into premium styling and the
+Milestone 7B Developer Edition toolchain with `docker-compose.premium.yml`.
 
 ## First-Run and Force Flow
 
@@ -86,10 +86,25 @@ more application defaults, and optional developer tooling.
 - Publish or stage premium assets through the streamed installer.
 - Add a future Thunar action for the Milestone 7A helper:
   `Right-click .deb -> Install with Nexus`.
-- Add VS Code or VSCodium as an explicit developer-workstation feature if it
-  should survive full container recreation.
 - Evaluate a maintained custom base image if deeper rounded-window styling,
   blur, or curated application bundles become product requirements.
+- Evaluate optional editor extensions and AI tooling separately; do not make
+  the lightweight workstation image carry every workload.
+
+## Developer Edition Upgrade
+
+Milestone 7B adds VSCodium as the baked default editor and places
+`codium.desktop` in the Whisker Menu favorites. It does not add another pinned
+panel icon, keeping the bottom taskbar compact. Open the persistent project
+folder from a terminal with:
+
+```sh
+codium /config/Workspace
+```
+
+Official VS Code and Cursor remain optional user-installed `.deb`
+applications. They may not survive full container recreation unless a future
+maintained image deliberately bakes them in.
 
 ## Developer Workstation Validation
 

@@ -71,12 +71,34 @@ User files persist independently from installed applications:
 
 ## Future Strategy
 
-- Offer a preinstalled developer-workstation image.
+- Use the opt-in Developer Edition image for common baked workstation tools.
 - Keep controlled user-installed `.deb` support.
 - Add AppImage support later.
 - Investigate Flatpak later.
 - Create a curated Nexus app catalog later.
 - Add a Thunar action later: `Right-click .deb -> Install with Nexus`.
+
+## Developer Edition Milestone 7B
+
+The repository-checkout Developer Edition image bakes common tools and
+VSCodium into `nexus-desktop-developer:7b`. VSCodium is the reproducible default
+editor and can open the persistent workspace with:
+
+```sh
+codium /config/Workspace
+```
+
+Official VS Code remains available for users who choose Microsoft's licensed
+distribution:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-deb.sh '/config/Downloads/code_*.deb'
+```
+
+Cursor also remains user-installed only. Manually installed applications may
+disappear after container recreation; baked applications survive rebuilds.
+Extend `Dockerfile.premium` with apt-based packages when an application should
+be part of the maintained workstation image.
 
 ## Current Limitations
 

@@ -1,4 +1,4 @@
-favorites=chromium.desktop,thunar.desktop,xfce4-terminal.desktop,xfce-settings-manager.desktop
+favorites=chromium.desktop,thunar.desktop,xfce4-terminal.desktop,codium.desktop,xfce-settings-manager.desktop
 button-title=Nexus
 button-icon=org.xfce.panel.whiskermenu
 show-button-title=false

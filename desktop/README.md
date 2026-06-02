@@ -49,9 +49,11 @@ The standalone installer still uses this stock path:
 sudo bash scripts/install-desktop.sh
 ```
 
-## Premium Milestone 6B
+## Developer Edition Milestone 7B
 
-Milestone 6B is an opt-in repository-checkout prototype. It adds:
+Milestone 7B expands the opt-in premium repository-checkout image into
+`nexus-desktop-developer:7b`. It preserves the Milestone 6B visual profile and
+adds a lightweight developer workstation:
 
 - `Arc-Dark` GTK and XFWM styling.
 - `Papirus-Dark` icons, Breeze cursors, and Inter UI fonts.
@@ -63,14 +65,24 @@ Milestone 6B is an opt-in repository-checkout prototype. It adds:
   Shared.
 - Workspace, Downloads, and Shared desktop folder shortcuts.
 - A local Nexus Desktop browser welcome page with optional web links.
+- Git, curl, wget, Python 3, virtual environments, build tools, unzip, jq, nano,
+  htop, and related workstation utilities.
+- Ubuntu Node.js 22 LTS with Corepack.
+- VSCodium as the baked editor, available from the Whisker Menu and terminal:
 
-VS Code and VSCodium are not baked into the premium image, so the premium
-profile does not create a fake editor launcher.
+```sh
+codium /config/Workspace
+```
 
-See [NEXUS_DESKTOP_UI_PLAN.md](./NEXUS_DESKTOP_UI_PLAN.md) for the visual design
-and XFCE constraints.
+The separate Ubuntu `npm` package is intentionally not installed because it
+pulls a large dependency tree. Corepack is included with Ubuntu Node.js.
+Official VS Code and Cursor remain user-installed `.deb` options.
 
-### Build and Apply Premium Desktop
+See [NEXUS_DESKTOP_DEVELOPER_EDITION.md](./NEXUS_DESKTOP_DEVELOPER_EDITION.md)
+for the baked tool list and [NEXUS_DESKTOP_UI_PLAN.md](./NEXUS_DESKTOP_UI_PLAN.md)
+for the visual design and XFCE constraints.
+
+### Build and Apply Developer Edition
 
 From a NexusOS repository checkout:
 
@@ -80,8 +92,21 @@ docker compose -f docker-compose.yml -f docker-compose.premium.yml build --pull 
 docker compose -f docker-compose.yml -f docker-compose.premium.yml up -d --force-recreate
 ```
 
-The premium image includes the theme hook and assets. No runtime package
-installation is required.
+The Developer Edition image includes the theme hook, assets, and baked tools.
+No runtime package installation is required for the included workstation.
+
+Verify the baked toolchain:
+
+```sh
+docker exec nexus-desktop git --version
+docker exec nexus-desktop python3 --version
+docker exec nexus-desktop node --version
+docker exec nexus-desktop corepack --version
+docker exec -u abc nexus-desktop codium --version
+```
+
+Use `-u abc` for VSCodium CLI verification because Electron refuses to run as
+root.
 
 ### Force Reapply
 
@@ -201,9 +226,9 @@ Your persistent files remain under `/DATA/Nexus`.
 
 ### Theme Did Not Change
 
-Confirm that the running container uses `nexus-desktop-premium:6b`, then run the
-force-reapply commands above. A container restart is required for deterministic
-XFCE reload.
+Confirm that the running container uses `nexus-desktop-developer:7b`, then run
+the force-reapply commands above. A container restart is required for
+deterministic XFCE reload.
 
 ```sh
 docker inspect nexus-desktop --format '{{.Config.Image}}'
@@ -237,8 +262,8 @@ Then force reapply and restart the container.
 ## Known Limitations
 
 - Streamed `--with-desktop` installer staging currently downloads only the
-  stock Compose file. Premium 6B requires a repository checkout until installer
-  integration is updated.
+  stock Compose file. Developer Edition 7B requires a repository checkout until
+  installer integration is updated.
 - XFCE does not provide native glass blur, fully rounded application windows,
   or dock-grade animations.
 - There is no trusted public HTTPS certificate, reverse proxy, or Nexus
@@ -253,6 +278,8 @@ Then force reapply and restart the container.
   Thunar action remains deferred: `Right-click .deb -> Install with Nexus`.
 - Streamed desktop installer staging does not download `desktop/scripts/` yet,
   so the Milestone 7A helper currently requires a repository checkout.
+- Ollama, AI runtime bundling, Docker-in-Docker, and default editor extensions
+  remain deferred.
 - The pinned LinuxServer Webtop image supports `amd64` and `arm64`; current
   Webtop releases do not provide an `armv7` image.
 
