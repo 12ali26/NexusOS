@@ -383,6 +383,7 @@ stage_desktop_runtime() {
 		"desktop/docker-compose.premium.yml"
 		"desktop/Dockerfile.premium"
 		"desktop/scripts/apply-nexus-theme.sh"
+		"desktop/scripts/fix-electron-launchers.sh"
 		"desktop/scripts/nexus-install-deb.sh"
 		"desktop/scripts/nexus-install-downloaded-debs.sh"
 		"desktop/assets/desktop/Downloads.desktop"

@@ -74,6 +74,29 @@ docker exec -u abc nexus-desktop codium --version
 Use `-u abc` for VSCodium verification because Electron refuses root
 execution.
 
+## GUI Launcher Repair
+
+Milestone 8B runs a startup hook that creates user-level launchers for
+installed VSCodium, VS Code, and Cursor desktop files. It preserves application
+names and icons while adding the container-safe `--no-sandbox` flag to each
+`Exec=` action. The generated launchers live under:
+
+```text
+/config/.local/share/applications
+```
+
+Run the idempotent repair manually after adding a new `.deb` application:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/fix-electron-launchers.sh
+```
+
+Verify VSCodium:
+
+```sh
+docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications/codium.desktop
+```
+
 ## Persistence Model
 
 Files under `/DATA/Nexus` survive restarts and container recreation. Tools

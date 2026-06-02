@@ -229,6 +229,49 @@ helper refuses zero matches and multiple matches. See
 [NEXUS_DESKTOP_APP_INSTALLATION_PLAN.md](./NEXUS_DESKTOP_APP_INSTALLATION_PLAN.md)
 for the persistence model and future app strategy.
 
+## Electron App Launchers
+
+Milestone 8B repairs GUI launchers for supported Electron coding apps inside
+the container:
+
+- VSCodium
+- VS Code
+- Cursor
+
+On desktop startup, Nexus copies installed system launchers into:
+
+```text
+/config/.local/share/applications
+```
+
+Each user-level launcher keeps its original name and icon while adding the
+container-safe `--no-sandbox` flag to `Exec=` actions. The repair is
+idempotent, so restarts do not duplicate flags.
+
+After pulling Milestone 8B, recreate the selected desktop variant once so the
+startup-hook mount is added:
+
+```sh
+cd ~/NexusOS
+git pull
+cd desktop
+docker compose -f docker-compose.yml -f docker-compose.premium.yml up -d --force-recreate
+```
+
+Run the repair manually after installing a new `.deb` without restarting:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/fix-electron-launchers.sh
+```
+
+Inspect generated launchers for installed applications:
+
+```sh
+docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications/codium.desktop
+docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications/code.desktop
+docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications/cursor.desktop
+```
+
 ### Return to Stock Desktop
 
 Run the stock installer, then recreate the service without the premium
@@ -278,6 +321,18 @@ docker exec nexus-desktop test -d /usr/share/icons/Papirus-Dark
 ```
 
 Then force reapply and restart the container.
+
+### App Opens From Terminal but Not From Icon
+
+Electron coding apps may require `--no-sandbox` inside the Webtop container.
+Terminal commands can work while the unpatched XFCE menu launcher appears to
+do nothing. Repair the user-level launchers:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/fix-electron-launchers.sh
+```
+
+Then reopen the XFCE menu and launch VSCodium, VS Code, or Cursor normally.
 
 ## Known Limitations
 

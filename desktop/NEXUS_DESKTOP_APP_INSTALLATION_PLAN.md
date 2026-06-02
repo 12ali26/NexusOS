@@ -100,6 +100,27 @@ disappear after container recreation; baked applications survive rebuilds.
 Extend `Dockerfile.premium` with apt-based packages when an application should
 be part of the maintained workstation image.
 
+## GUI Launcher Repair Milestone 8B
+
+VSCodium, VS Code, and Cursor are Electron applications. Inside Webtop, their
+terminal commands can work with `--no-sandbox` while their default XFCE menu
+launchers appear to do nothing.
+
+Nexus Desktop now runs an idempotent startup hook that copies installed system
+desktop files into:
+
+```text
+/config/.local/share/applications
+```
+
+The user-level copies preserve the original launcher names and icons and add
+`--no-sandbox` to each `Exec=` action. After installing a supported `.deb`,
+repair launchers immediately without restarting:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/fix-electron-launchers.sh
+```
+
 ## Current Limitations
 
 - Milestone 7C streamed desktop installs stage `desktop/scripts/`. Servers
