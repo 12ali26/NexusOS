@@ -13,7 +13,7 @@ services:
       - /DATA/Nexus/Downloads:/config/Downloads
       - /DATA/Nexus/Shared:/config/Shared
     ports:
-      - "6901:3000"
+      - "6901:3001"
     shm_size: "1gb"
     restart: unless-stopped
     networks:

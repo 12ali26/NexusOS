@@ -6,11 +6,11 @@ Compose service. It is not integrated with the Nexus Cloud Go backend yet.
 
 ## Default Port
 
-The Webtop container listens for HTTP traffic on port `3000`. This prototype
+The Webtop container listens for HTTPS traffic on port `3001`. This prototype
 publishes it on host port `6901`, so open:
 
 ```text
-http://YOUR_SERVER_IP:6901
+https://YOUR_SERVER_IP:6901
 ```
 
 ## Start on EC2 or Another Linux Server
@@ -49,7 +49,7 @@ docker compose up -d
 Open TCP port `6901` in the EC2 security group for your IP address, then visit:
 
 ```text
-http://YOUR_EC2_PUBLIC_IP:6901
+https://YOUR_EC2_PUBLIC_IP:6901
 ```
 
 To inspect container state:
@@ -97,8 +97,9 @@ server:
 ## Known Limitations
 
 - This prototype is not connected to the Nexus Cloud dashboard or Go backend.
-- Port `6901` exposes Webtop HTTP directly. Restrict the EC2 security-group rule
-  to your own IP during testing.
+- Port `6901` exposes Webtop HTTPS directly using its default self-signed
+  certificate. Restrict the EC2 security-group rule to your own IP during
+  testing and expect a browser certificate warning.
 - HTTPS, reverse-proxy routing, Nexus authentication, and automatic app
   installation are intentionally deferred.
 - The container uses the upstream Ubuntu XFCE image without extra development
