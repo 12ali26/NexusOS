@@ -1,0 +1,24 @@
+services:
+  nexus-desktop:
+    image: lscr.io/linuxserver/webtop:ubuntu-xfce
+    container_name: nexus-desktop
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TITLE: ${TITLE:-Nexus Desktop}
+    volumes:
+      - /DATA/Nexus/Home:/config
+      - /DATA/Nexus/Workspace:/config/Workspace
+      - /DATA/Nexus/Downloads:/config/Downloads
+      - /DATA/Nexus/Shared:/config/Shared
+    ports:
+      - "6901:3000"
+    shm_size: "1gb"
+    restart: unless-stopped
+    networks:
+      - nexus-network
+
+networks:
+  nexus-network:
+    external: true
