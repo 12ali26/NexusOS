@@ -1,65 +1,89 @@
 # Nexus Desktop UI Plan
 
-## Milestone 6A
+## Milestone 6B
 
-Nexus Desktop keeps the stable LinuxServer Webtop Ubuntu XFCE container and
-applies a small Nexus-branded XFCE profile on first startup. The customization
-is lightweight, reproducible, and isolated under `desktop/`.
+Nexus Desktop already works as a persistent browser-accessible XFCE workspace,
+but the stock session still looks like a remote lab machine. Milestone 6B adds
+an opt-in premium image while preserving the stable stock Compose path used by
+streamed installs.
 
-The profile uses assets already available in the pinned Webtop image:
+## Current Problems
 
-- `Greybird-dark` GTK and XFWM theme
-- `elementary-xfce-dark` icon theme
-- Chromium, Thunar File Manager, and XFCE Terminal
+- Stock XFCE panels, window borders, icons, and menus feel dated.
+- The file manager and terminal do not emphasize the persistent Nexus folders.
+- The first-run profile lacks a polished menu, consistent icons, and a branded
+  browser start page.
+- Existing `/DATA/Nexus/Home` profiles retain earlier XFCE settings unless a
+  versioned upgrade applies a new profile once.
 
-No packages are installed at startup. Papirus icons, VS Code or VSCodium, and
-dock emulation are intentionally deferred.
+## Target Identity
 
-## First-Run Flow
+- Calm navy and charcoal surfaces with restrained Nexus orange highlights.
+- A single dark bottom taskbar with a modern Whisker application menu.
+- Consistent `Papirus-Dark` icons, `Arc-Dark` GTK and XFWM styling, Breeze
+  cursors, and Inter UI fonts.
+- Intentional access to Browser, Files, Terminal, Workspace, and Settings.
+- A focused desktop with only Workspace, Downloads, and Shared shortcuts.
 
-The Compose service mounts `scripts/` read-only at `/custom-cont-init.d`.
-LinuxServer runs the executable `apply-nexus-theme.sh` hook after built-in init
-and before desktop services start.
+## Premium Architecture
 
-The hook:
+`Dockerfile.premium` builds from the pinned LinuxServer Webtop image and
+installs Ubuntu-packaged visual dependencies:
 
-1. Exits without changes when `/config/.nexus-desktop/theme-applied-v1` exists.
-2. Backs up an existing XFCE profile under
-   `/config/.nexus-desktop/backups/YYYYMMDDTHHMMSSZ/xfce4/`.
-3. Installs the Nexus wallpaper, XFCE settings, bottom panel, and launchers.
-4. Restores ownership to the remapped LinuxServer `abc` account.
-5. Creates the flag file only after all changes succeed.
-
-This gives new profiles a Nexus default while preserving later user
-customizations across normal container restarts.
-
-## Visual Direction
-
-- Dark navy gradient Nexus Cloud wallpaper with restrained orange accents.
-- Dark XFCE controls and window frames.
-- Full-width bottom taskbar with a compact 34-pixel layout.
-- Pinned Browser, Files, and Terminal launchers.
-- Running applications, notification tray, audio control, clock, and session
-  actions remain available.
-
-## Reapply or Disable
-
-To force the theme to reapply, delete the flag and restart the container:
-
-```sh
-rm /DATA/Nexus/Home/.nexus-desktop/theme-applied-v1
-cd desktop
-docker compose restart nexus-desktop
+```text
+arc-theme
+fonts-inter
+papirus-icon-theme
+xfce4-whiskermenu-plugin
 ```
 
-Reapplication creates a timestamped backup first. To disable automatic
-application for a future deployment, remove the `/custom-cont-init.d` and
-`/opt/nexus-desktop/assets` mounts from the Compose service. Existing profile
-files remain persistent under `/DATA/Nexus/Home`.
+The image bakes the assets into `/opt/nexus-desktop/assets` and the executable
+theme hook into `/custom-cont-init.d/apply-nexus-theme.sh`. No packages are
+installed at runtime, and no external theme repositories are cloned.
+
+The base `docker-compose.yml` intentionally remains stock for streamed
+installer compatibility. Repository checkouts opt into premium styling with
+`docker-compose.premium.yml`.
+
+## First-Run and Force Flow
+
+The premium hook creates:
+
+```text
+/config/.nexus-desktop/theme-applied-v2
+```
+
+Because the flag is versioned, existing Milestone 6A profiles receive the 6B
+upgrade once after the premium container is recreated. Before application, the
+hook backs up the current XFCE profile to:
+
+```text
+/config/.config/xfce4.backup-YYYYMMDDTHHMMSSZ
+```
+
+Existing GTK bookmarks are backed up separately. The hook only resets
+Nexus-managed visual settings on `--force`; it never deletes user files or the
+Workspace, Downloads, Shared, and Desktop directories.
+
+Run a deterministic manual reapply with:
+
+```sh
+docker exec nexus-desktop bash /custom-cont-init.d/apply-nexus-theme.sh --force
+cd ~/NexusOS/desktop
+docker compose -f docker-compose.yml -f docker-compose.premium.yml restart nexus-desktop
+```
+
+## XFCE Constraints
+
+XFCE can provide a clean, lightweight desktop, but it does not guarantee native
+glass blur, fully rounded application windows, or dock-grade animations.
+Milestone 6B uses stable opacity and dark styling rather than fragile desktop
+effects. A later custom desktop base can evaluate stronger compositor effects,
+more application defaults, and optional developer tooling.
 
 ## Deferred Work
 
-- Evaluate Papirus icons in a maintained derived image.
-- Add optional development tools separately from the visual profile.
-- Integrate the visual profile into the standalone installer after EC2 testing.
-- Add richer accent styling only if it remains stable across Webtop updates.
+- Publish or stage premium assets through the streamed installer.
+- Add VS Code or VSCodium only as an explicit developer-workstation feature.
+- Evaluate a maintained custom base image if deeper rounded-window styling,
+  blur, or curated application bundles become product requirements.

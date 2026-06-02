@@ -1,0 +1,6 @@
+services:
+  nexus-desktop:
+    image: nexus-desktop-premium:6b
+    build:
+      context: .
+      dockerfile: Dockerfile.premium

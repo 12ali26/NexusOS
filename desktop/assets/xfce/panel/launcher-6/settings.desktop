@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Settings
+Comment=Customize your desktop
+Exec=xfce4-settings-manager
+Icon=org.xfce.settings.manager
+Terminal=false

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Downloads
+Comment=Open your downloads
+Exec=thunar /config/Downloads
+Icon=folder-download
+Terminal=false

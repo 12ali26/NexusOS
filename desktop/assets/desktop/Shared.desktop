@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Shared
+Comment=Open shared Nexus files
+Exec=thunar /config/Shared
+Icon=folder-publicshare
+Terminal=false

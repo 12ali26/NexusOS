@@ -1,0 +1,14 @@
+FROM lscr.io/linuxserver/webtop:ubuntu-xfce@sha256:dc752c7ac78278e39b5cd32e85cbfe7cfc7f68c32f03f06bf91bcb1af1b7737d
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        arc-theme \
+        fonts-inter \
+        papirus-icon-theme \
+        xfce4-whiskermenu-plugin && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --chown=root:root assets/ /opt/nexus-desktop/assets/
+COPY --chown=root:root scripts/apply-nexus-theme.sh /custom-cont-init.d/apply-nexus-theme.sh
+
+RUN chmod 0755 /custom-cont-init.d/apply-nexus-theme.sh

@@ -12,8 +12,6 @@ services:
       - /DATA/Nexus/Workspace:/config/Workspace
       - /DATA/Nexus/Downloads:/config/Downloads
       - /DATA/Nexus/Shared:/config/Shared
-      - ./scripts:/custom-cont-init.d:ro
-      - ./assets:/opt/nexus-desktop/assets:ro
     ports:
       - "6901:3001"
     shm_size: "1gb"

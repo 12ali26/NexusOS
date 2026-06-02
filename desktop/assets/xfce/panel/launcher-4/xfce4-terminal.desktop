@@ -3,6 +3,6 @@ Version=1.0
 Type=Application
 Name=Terminal
 Comment=Open a terminal
-Exec=xfce4-terminal
+Exec=xfce4-terminal --working-directory=/config/Workspace
 Icon=org.xfce.terminal
 Terminal=false

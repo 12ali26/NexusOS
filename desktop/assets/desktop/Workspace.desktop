@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Workspace
+Comment=Open your Nexus workspace
+Exec=thunar /config/Workspace
+Icon=folder-development
+Terminal=false
