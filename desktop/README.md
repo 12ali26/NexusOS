@@ -36,6 +36,20 @@ https://YOUR_SERVER_IP:6901
 Install Docker and the Docker Compose plugin first. On a Nexus Cloud server, the
 experimental Nexus installer normally installs Docker already.
 
+### Standalone Install
+
+From the NexusOS repository root, run:
+
+```sh
+sudo bash scripts/install-desktop.sh
+```
+
+The standalone script creates the folders, reuses or creates `nexus-network`,
+starts the desktop with Docker Compose, and prints local access URLs. See
+[NEXUS_DESKTOP_INSTALLER.md](../docs/NEXUS_DESKTOP_INSTALLER.md) for details.
+
+### Manual Install
+
 Create the persistent folders:
 
 ```sh
@@ -133,8 +147,8 @@ The prototype was tested successfully on an EC2 Linux server:
   testing and expect a browser certificate warning.
 - There is no reverse proxy, public domain, trusted HTTPS certificate, or Nexus
   single sign-on yet.
-- The Nexus installer does not create folders, create `nexus-network`, or start
-  the desktop container yet.
+- The main Nexus Cloud installer does not call the standalone desktop installer
+  yet.
 - The Nexus dashboard does not have a Nexus Desktop card yet.
 - The container uses the upstream Ubuntu XFCE image without extra development
   tools or a custom Nexus desktop theme.
