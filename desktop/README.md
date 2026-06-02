@@ -22,6 +22,36 @@ Browser
 See [NEXUS_DESKTOP_ARCHITECTURE.md](../docs/NEXUS_DESKTOP_ARCHITECTURE.md) for
 the design direction.
 
+## Nexus Theme
+
+Milestone 6A adds a scripted Nexus-branded XFCE profile without replacing the
+working Webtop architecture. On first startup, LinuxServer runs
+`scripts/apply-nexus-theme.sh` through its `/custom-cont-init.d` hook.
+
+The script installs:
+
+- A dark Nexus Cloud gradient wallpaper with orange accents.
+- The bundled `Greybird-dark` GTK and window-manager theme.
+- The bundled `elementary-xfce-dark` icon theme.
+- A compact full-width bottom taskbar.
+- Pinned Browser, Files, and Terminal launchers.
+
+After successful setup, the script creates:
+
+```text
+/config/.nexus-desktop/theme-applied-v1
+```
+
+Normal restarts do not reset later user customizations. If an existing XFCE
+profile is present when the theme is applied, it is backed up under:
+
+```text
+/config/.nexus-desktop/backups/YYYYMMDDTHHMMSSZ/xfce4/
+```
+
+See [NEXUS_DESKTOP_UI_PLAN.md](./NEXUS_DESKTOP_UI_PLAN.md) for the milestone
+design.
+
 ## Default Port
 
 The Webtop container listens for HTTPS traffic on port `3001`. This prototype
@@ -107,6 +137,29 @@ To stop the desktop without deleting persistent files:
 docker compose down
 ```
 
+### Reapply the Nexus Theme
+
+Delete the flag file and restart the desktop container:
+
+```sh
+rm /DATA/Nexus/Home/.nexus-desktop/theme-applied-v1
+cd desktop
+docker compose restart nexus-desktop
+```
+
+The script creates a timestamped backup before replacing an existing XFCE
+profile.
+
+### Disable or Customize the Theme
+
+The theme is only a first-run default. Customize XFCE normally after it has
+loaded; your changes persist under `/DATA/Nexus/Home`.
+
+To disable automatic application in a future checkout, remove the
+`/custom-cont-init.d` and `/opt/nexus-desktop/assets` mounts from the Compose
+service. Restore a timestamped profile backup if you want to undo an applied
+theme.
+
 ## Configuration
 
 The Compose file uses these environment variables:
@@ -149,7 +202,7 @@ The prototype was tested successfully on an EC2 Linux server:
 
 ## Known Limitations
 
-- This prototype is not connected to the Nexus Cloud dashboard or Go backend.
+- This prototype is not connected to the Nexus Cloud Go backend.
 - Port `6901` must be opened manually in the EC2 security group or host
   firewall.
 - Port `6901` exposes Webtop HTTPS directly using its default self-signed
@@ -159,14 +212,39 @@ The prototype was tested successfully on an EC2 Linux server:
   single sign-on yet.
 - The main Nexus Cloud installer provisions the desktop only when
   `--with-desktop` is passed.
-- The Nexus dashboard does not have a Nexus Desktop card yet.
-- The container uses the upstream Ubuntu XFCE image without extra development
-  tools or a custom Nexus desktop theme.
+- The Nexus dashboard card can open the desktop, but deeper dashboard lifecycle
+  integration is deferred.
+- The visual profile deliberately reuses bundled Webtop themes. Papirus icons,
+  VS Code, VSCodium, and deeper GTK accent styling are deferred.
+- The pinned Webtop image supports `amd64` and `arm64`. Current Webtop releases
+  do not provide an `armv7` image.
+- Streamed installer bundling for the new theme assets is deferred. Use a
+  repository checkout for Milestone 6A testing; a desktop started without the
+  mounted assets continues to use the working stock XFCE profile.
+- Milestone 6A still needs visual confirmation on the EC2 prototype after
+  recreating the container.
+
+## Apply Milestone 6A on EC2
+
+No image rebuild is required. After pulling the updated repository, recreate
+the desktop container so Docker includes the new read-only mounts:
+
+```sh
+cd desktop
+docker compose up -d --force-recreate
+```
+
+Confirm the wallpaper, bottom panel, launchers, persisted files, and restart
+behavior in the browser at:
+
+```text
+https://YOUR_SERVER_IP:6901
+```
 
 ## Future Direction
 
 - Add an optional Nexus installer flag for desktop provisioning.
-- Add a Nexus Desktop app card in the dashboard.
+- Add deeper Nexus Desktop lifecycle controls to the dashboard card.
 - Place the desktop behind Nginx or Caddy with domain and HTTPS support.
 - Use `nexus-network` as the shared app and service network where appropriate.
 - Explore a later Kubernetes or cluster edition after the single-server model is

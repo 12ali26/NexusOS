@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Files
+Comment=Browse your Nexus files
+Exec=thunar %U
+Icon=org.xfce.thunar
+Terminal=false

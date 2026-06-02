@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="0.55" stop-color="#0d2037"/>
+      <stop offset="1" stop-color="#142c44"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.2" r="0.65">
+      <stop offset="0" stop-color="#ff7a1a" stop-opacity="0.22"/>
+      <stop offset="0.38" stop-color="#ff7a1a" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff7a1a" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#ff7a1a" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#background)"/>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+  <g fill="none" stroke="#8fb5d4" stroke-opacity="0.07">
+    <path d="M0 820C280 700 480 740 720 620s440-90 660-180 360-20 540-150"/>
+    <path d="M0 900c250-110 500-70 730-180s460-110 680-180 340-80 510-210"/>
+    <path d="M0 980c300-100 510-80 770-170s430-130 650-170 330-100 500-210"/>
+  </g>
+  <g transform="translate(118 114)">
+    <rect width="74" height="74" rx="17" fill="#ff7a1a"/>
+    <path d="M20 54V20h9l16 20V20h10v34h-9L30 34v20z" fill="#fff"/>
+    <text x="96" y="34" fill="#fff" font-family="Arial, sans-serif" font-size="26" font-weight="700" letter-spacing="3">NEXUS CLOUD</text>
+    <text x="98" y="59" fill="#b7cadb" font-family="Arial, sans-serif" font-size="13" letter-spacing="4">DESKTOP</text>
+  </g>
+  <rect x="116" y="216" width="442" height="2" rx="1" fill="url(#line)"/>
+  <circle cx="1540" cy="270" r="3" fill="#ff7a1a" opacity="0.75"/>
+  <circle cx="1610" cy="340" r="2" fill="#ff7a1a" opacity="0.5"/>
+  <circle cx="1460" cy="390" r="2" fill="#ff7a1a" opacity="0.4"/>
+</svg>

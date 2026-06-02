@@ -1,6 +1,6 @@
 services:
   nexus-desktop:
-    image: lscr.io/linuxserver/webtop:ubuntu-xfce
+    image: lscr.io/linuxserver/webtop:ubuntu-xfce@sha256:dc752c7ac78278e39b5cd32e85cbfe7cfc7f68c32f03f06bf91bcb1af1b7737d
     container_name: nexus-desktop
     environment:
       TZ: ${TZ:-Etc/UTC}
@@ -12,6 +12,8 @@ services:
       - /DATA/Nexus/Workspace:/config/Workspace
       - /DATA/Nexus/Downloads:/config/Downloads
       - /DATA/Nexus/Shared:/config/Shared
+      - ./scripts:/custom-cont-init.d:ro
+      - ./assets:/opt/nexus-desktop/assets:ro
     ports:
       - "6901:3001"
     shm_size: "1gb"
