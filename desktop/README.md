@@ -232,6 +232,94 @@ helper refuses zero matches and multiple matches. See
 [NEXUS_DESKTOP_APP_INSTALLATION_PLAN.md](./NEXUS_DESKTOP_APP_INSTALLATION_PLAN.md)
 for the persistence model and future app strategy.
 
+## Install AppImage Apps
+
+Some Linux desktop applications ship as AppImage files instead of `.deb`
+packages. Nexus can copy a downloaded AppImage into persistent `/config`, mark
+it executable, and register a launcher:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-appimage.sh '/config/Downloads/MyApp*.AppImage'
+```
+
+For Electron-based AppImages, add `--electron` so the generated launcher uses
+the same container-safe flags as VSCodium, VS Code, and Cursor:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-appimage.sh --name "My Editor" --electron '/config/Downloads/MyEditor*.AppImage'
+```
+
+Installed AppImages live in:
+
+```text
+/config/nexus/appimages
+```
+
+Their launchers live in:
+
+```text
+/config/.local/share/applications
+```
+
+## Diagnose Desktop Apps
+
+Run the desktop doctor when an app opens from terminal but not from an icon, a
+file opens in the wrong app, or a persisted app did not restore:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/nexus-desktop-doctor.sh
+```
+
+It reports helper mounts, cached `.deb` packages, apt package restore entries,
+registered AppImages, default MIME handlers, generated launchers, missing
+launcher executables, Thunar actions, compatibility configs, and recent
+install/restore logs.
+
+For the full live-browser acceptance runbook, see
+[NEXUS_DESKTOP_EC2_VALIDATION.md](./NEXUS_DESKTOP_EC2_VALIDATION.md).
+
+## Startup Hooks
+
+Nexus Desktop mounts three startup hooks into LinuxServer Webtop:
+
+```text
+/custom-cont-init.d/10-restore-nexus-user-apps.sh
+/custom-cont-init.d/20-fix-electron-launchers.sh
+/custom-cont-init.d/30-configure-desktop-defaults.sh
+```
+
+They come from:
+
+```text
+desktop/scripts/restore-nexus-user-apps.sh
+desktop/scripts/fix-electron-launchers.sh
+desktop/scripts/configure-desktop-defaults.sh
+```
+
+Startup order matters: persisted packages restore first, launchers are repaired
+second, and default apps plus Thunar actions are configured last.
+
+## Local Helper Smoke Test
+
+Run the desktop helper smoke test from a repository checkout before changing
+installer or app-helper behavior:
+
+```sh
+bash desktop/scripts/test-nexus-desktop-helpers.sh
+```
+
+The test uses temporary directories and stub commands. It does not start
+containers, modify `/DATA`, or touch a real Webtop profile.
+
+On an EC2 validation host, capture non-interactive container evidence with:
+
+```sh
+bash desktop/scripts/validate-nexus-desktop-ec2.sh
+```
+
+Then continue with the browser checks in
+[NEXUS_DESKTOP_EC2_VALIDATION.md](./NEXUS_DESKTOP_EC2_VALIDATION.md).
+
 ## Electron App Launchers
 
 Milestone 8B repairs GUI launchers for Electron apps inside the container.
@@ -254,13 +342,20 @@ folder arguments while adding container-safe flags to `Exec=` actions:
 ```text
 GTK_USE_PORTAL=0
 --no-sandbox
+--disable-gpu
 --xdg-portal-required-version=999
 ```
 
 The GTK fallback avoids container portal issues when selecting files or
-folders from an Electron application. The repair is idempotent, so restarts do
-not duplicate flags. Ordinary non-Electron applications continue using their
-vendor desktop files without Nexus-specific changes.
+folders from an Electron application. The GPU flag avoids common Webtop
+container rendering problems where an app process starts but no visible window
+appears. The repair is idempotent, so restarts do not duplicate flags. If a
+vendor launcher points at a stale executable path, such as a Cursor desktop
+shortcut looking for `/usr/share/cursor/cursor` after the binary was installed
+somewhere else, Nexus also tries common fallback locations such as
+`/usr/bin/cursor`, `/opt/Cursor/cursor`, and `/opt/cursor/cursor`. Ordinary
+non-Electron applications continue using their vendor desktop files without
+Nexus-specific changes.
 
 Electron documents `--xdg-portal-required-version` as the Linux file-dialog
 portal threshold switch: <https://www.electronjs.org/docs/latest/api/command-line-switches#--xdg-portal-required-versionversion>.
@@ -298,6 +393,118 @@ its desktop-file basename to:
 
 Use one filename per line, such as `my-editor.desktop`, then run the repair
 command again.
+
+For an Electron package that needs an additional container flag, add one flag
+per line to:
+
+```text
+/config/nexus/electron-flags.conf
+```
+
+Example:
+
+```text
+--ozone-platform=x11
+```
+
+Then rerun the repair command. Nexus preserves the default flags and avoids
+duplicating repeated flags.
+
+## Default File Associations
+
+Nexus also runs a startup hook for desktop defaults after persisted apps are
+restored and Electron launchers are repaired. It sets missing associations only;
+existing user choices are left alone.
+
+Current defaults:
+
+- Folders and `file://` URLs open with Thunar.
+- Text, code, JSON, YAML, HTML, CSS, XML, JavaScript, and TypeScript files open
+  with the first available editor launcher in this order: VSCodium, VS Code,
+  then Cursor.
+
+The generated defaults live in:
+
+```text
+/config/.local/share/applications/mimeapps.list
+```
+
+Inspect a default:
+
+```sh
+docker exec -u abc nexus-desktop xdg-mime query default inode/directory
+docker exec -u abc nexus-desktop xdg-mime query default text/plain
+```
+
+Change a default inside the desktop through XFCE's normal settings or with
+`xdg-mime`; the startup hook will not overwrite a valid existing choice.
+
+Use the Nexus helper when you want to set defaults from the host shell:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/nexus-set-default-app.sh cursor text/plain text/markdown application/json
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/nexus-set-default-app.sh thunar inode/directory
+```
+
+The helper accepts either a friendly app name such as `cursor`, `codium`,
+`code`, or `thunar`, or an explicit desktop file such as `cursor.desktop`.
+
+## Open Files From Thunar
+
+Nexus installs a Thunar custom action:
+
+```text
+Nexus -> Open in Nexus Editor
+```
+
+Use it from the file manager by right-clicking a file or folder. It launches
+the first available editor in this order: VSCodium, VS Code, then Cursor. This
+path bypasses flaky Electron file-picker behavior by sending the selected path
+directly to the editor CLI.
+
+Override the preferred editor by writing one executable name or path to:
+
+```text
+/config/nexus/editor-command.conf
+```
+
+Example:
+
+```text
+cursor
+```
+
+## Install Apps From Thunar
+
+Nexus also installs a Thunar custom action for downloaded installer files:
+
+```text
+Nexus -> Install with Nexus
+```
+
+Use it by right-clicking one `.deb`, `.AppImage`, or `.appimage` file in
+Thunar. The action dispatches to the same terminal-tested helpers:
+
+- `.deb` files use `nexus-install-deb.sh`.
+- AppImage files use `nexus-install-appimage.sh`.
+
+## Register Custom Executables
+
+For apps that arrive as an unpacked binary, script, or manually copied
+executable, register a normal desktop launcher:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/nexus-register-app.sh --name "My Tool" /config/Shared/my-tool
+```
+
+For Electron-style binaries, add `--electron`:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/nexus-register-app.sh --name "My Electron Tool" --electron /config/Shared/my-electron-tool
+```
+
+The launcher is written to `/config/.local/share/applications`, so it survives
+container recreation.
 
 ## Persist Installed `.deb` Apps
 
@@ -400,7 +607,15 @@ the selected path to the editor. Repair the user-level launchers:
 docker exec -u abc nexus-desktop bash /config/nexus/scripts/fix-electron-launchers.sh
 ```
 
-Then reopen the XFCE menu and launch the application normally.
+Then reopen the XFCE menu and launch the application normally. If the app was
+installed in a nonstandard location, check the generated launcher:
+
+```sh
+docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications/cursor.desktop
+```
+
+The `Exec=` path should point at an executable that exists inside the
+container.
 
 ## Known Limitations
 
@@ -416,8 +631,8 @@ Then reopen the XFCE menu and launch the application normally.
 - Applications installed manually with raw `apt` commands may not survive a
   full container recreation. Applications installed through the Nexus `.deb`
   helper or apt-package helper are restored from persistent `/config`.
-- Milestone 7A provides a terminal helper for `.deb` applications. A future
-  Thunar action remains deferred: `Right-click .deb -> Install with Nexus`.
+- Milestone 7A provides terminal helpers and Thunar actions for downloaded
+  `.deb` and AppImage applications.
 - Developer Edition supports `amd64` and `arm64`. Use stock desktop on `armv7`.
 - Ollama, AI runtime bundling, Docker-in-Docker, and default editor extensions
   remain deferred.

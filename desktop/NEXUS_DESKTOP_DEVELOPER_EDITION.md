@@ -81,8 +81,10 @@ execution.
 Milestone 8B runs a startup hook that creates user-level launchers for detected
 Electron applications, including VSCodium, VS Code, and Cursor. It preserves
 application names, icons, and path arguments while adding container-safe
-sandbox and GTK file-dialog fallback flags to each `Exec=` action. The
-generated launchers live under:
+sandbox, GPU, and GTK file-dialog fallback flags to each `Exec=` action. It
+also repairs common stale executable paths for Code-family launchers when the
+real binary is available in a standard location such as `/usr/bin`,
+`/opt/Cursor`, or `/opt/cursor`. The generated launchers live under:
 
 ```text
 /config/.local/share/applications
@@ -102,6 +104,32 @@ docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications
 
 For an Electron package that is not discovered automatically, add its desktop
 filename to `/config/nexus/electron-launchers.conf` and rerun the repair.
+For an Electron package that needs extra runtime flags, add one flag per line
+to `/config/nexus/electron-flags.conf` and rerun the repair.
+Inspect the generated `Exec=` line when an icon still fails:
+
+```sh
+docker exec -u abc nexus-desktop grep '^Exec=' /config/.local/share/applications/cursor.desktop
+```
+
+Nexus also sets missing default file associations after launchers are repaired.
+Folders open with Thunar, and common text/code files open with the first
+available coding editor in this order: VSCodium, VS Code, then Cursor. Existing
+user choices in `/config/.local/share/applications/mimeapps.list` are preserved.
+Users can set explicit defaults with
+`/config/nexus/scripts/nexus-set-default-app.sh`, for example:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/nexus-set-default-app.sh cursor text/plain application/json
+```
+
+Thunar also gets a `Nexus -> Open in Nexus Editor` action for selected files
+or folders, which calls `/config/nexus/scripts/nexus-open-in-editor.sh`
+directly. Set `/config/nexus/editor-command.conf` to `cursor`, `code`,
+`codium`, or an executable path to change the preferred editor.
+Downloaded `.deb` and AppImage files can be installed from Thunar with
+`Nexus -> Install with Nexus`, which dispatches to the same reproducible helper
+scripts used from the terminal.
 
 Applications installed through `nexus-install-deb.sh` are cached under
 `/config/nexus/packages` and restored when missing after container recreation.
@@ -115,6 +143,21 @@ docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-apt.sh vl
 
 Selected repository packages persist in `/config/nexus/apt-packages.txt` and
 are restored when missing after recreation.
+
+Install AppImage applications with:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-appimage.sh '/config/Downloads/MyApp*.AppImage'
+```
+
+Use `--electron` for Electron-based AppImages so their launcher receives the
+same container-safe flags as VSCodium, VS Code, and Cursor.
+
+Register unpacked binaries or custom scripts with:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/nexus-register-app.sh --name "My Tool" /config/Shared/my-tool
+```
 
 ## Persistence Model
 

@@ -15,6 +15,7 @@ services:
       - ./scripts:/config/nexus/scripts:ro
       - ./scripts/restore-nexus-user-apps.sh:/custom-cont-init.d/10-restore-nexus-user-apps.sh:ro
       - ./scripts/fix-electron-launchers.sh:/custom-cont-init.d/20-fix-electron-launchers.sh:ro
+      - ./scripts/configure-desktop-defaults.sh:/custom-cont-init.d/30-configure-desktop-defaults.sh:ro
     ports:
       - "6901:3001"
     shm_size: "1gb"

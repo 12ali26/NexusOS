@@ -58,6 +58,42 @@ The downloads helper installs only when exactly one `.deb` exists:
 docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-downloaded-debs.sh
 ```
 
+## AppImage Install Flow
+
+Some applications ship as AppImages instead of Debian packages. Nexus registers
+basic AppImage launchers without unpacking or modifying the application:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-appimage.sh '/config/Downloads/MyApp*.AppImage'
+```
+
+Electron-based AppImages can opt into the same container-safe flags used by
+Code-family launchers:
+
+```sh
+docker exec -it nexus-desktop bash /config/nexus/scripts/nexus-install-appimage.sh --name "My Editor" --electron '/config/Downloads/MyEditor*.AppImage'
+```
+
+The helper copies the file into `/config/nexus/appimages` and creates a launcher
+under `/config/.local/share/applications`, so it survives container recreation.
+Icon extraction, embedded metadata parsing, and AppImage update management
+remain future work.
+
+## Diagnostics
+
+Use the desktop doctor when a launcher, default app, restore, or AppImage
+registration does not behave as expected:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/nexus-desktop-doctor.sh
+```
+
+It prints helper availability, persisted `.deb` and apt packages, registered
+AppImages, MIME defaults, launcher `Exec=` lines, missing executable warnings,
+Thunar actions, compatibility config files, and recent install/restore logs.
+Use [NEXUS_DESKTOP_EC2_VALIDATION.md](./NEXUS_DESKTOP_EC2_VALIDATION.md) for
+the live browser pass/fail checklist.
+
 ## Persistence Model
 
 User files persist independently from installed applications:
@@ -73,10 +109,14 @@ User files persist independently from installed applications:
 
 - Use the opt-in Developer Edition image for common baked workstation tools.
 - Keep controlled user-installed `.deb` support.
-- Add AppImage support later.
+- Keep basic AppImage registration support; add richer icon extraction and
+  metadata handling later.
 - Investigate Flatpak later.
 - Create a curated Nexus app catalog later.
-- Add a Thunar action later: `Right-click .deb -> Install with Nexus`.
+- Keep `Nexus -> Open in Nexus Editor` for opening selected files and folders
+  from Thunar.
+- Keep `Nexus -> Install with Nexus` for installing one selected `.deb` or
+  AppImage from Thunar.
 
 ## Developer Edition Milestone 7B
 
@@ -115,18 +155,55 @@ applications and copies their installed system desktop files into:
 ```
 
 The user-level copies preserve names, icons, and path arguments while adding
-`GTK_USE_PORTAL=0`, `--no-sandbox`, and
+`GTK_USE_PORTAL=0`, `--no-sandbox`, `--disable-gpu`, and
 `--xdg-portal-required-version=999`. These flags use GTK chooser fallback
-behavior inside Webtop. After installing a `.deb`, repair launchers immediately
-without restarting:
+behavior inside Webtop. The same hook repairs common stale executable paths
+for VSCodium, VS Code, and Cursor when a desktop entry points at a missing
+binary but the real binary exists in a standard install location. After
+installing a `.deb`, repair launchers immediately without restarting:
 
 ```sh
 docker exec -u abc nexus-desktop bash /config/nexus/scripts/fix-electron-launchers.sh
 ```
 
 Unusual Electron desktop-file names can be listed one per line in
-`/config/nexus/electron-launchers.conf`. Ordinary non-Electron applications
-keep their vendor desktop launchers unchanged.
+`/config/nexus/electron-launchers.conf`. Additional Electron runtime flags can
+be listed one per line in `/config/nexus/electron-flags.conf`. Ordinary
+non-Electron applications keep their vendor desktop launchers unchanged.
+
+## Default Associations
+
+After persisted apps are restored and launchers are repaired, Nexus Desktop
+sets missing default file associations without overwriting valid user choices.
+Folders and `file://` URLs default to Thunar. Common text and code MIME types
+default to the first available coding editor launcher in this order: VSCodium,
+VS Code, then Cursor.
+
+This makes everyday actions such as double-clicking a project file or using
+`xdg-open /config/Workspace/test.js` behave more like a normal desktop while
+still allowing users to choose different defaults later.
+For scripted changes, `nexus-set-default-app.sh` maps friendly names or
+`.desktop` files to MIME types through `xdg-mime`.
+
+Nexus also adds a Thunar action under `Nexus -> Open in Nexus Editor`. It opens
+selected files or folders with the first available coding editor, bypassing an
+Electron app's internal file picker when that picker fails to return the
+selected path. Users can override the preferred editor with
+`/config/nexus/editor-command.conf`.
+
+For downloaded installers, Nexus adds `Nexus -> Install with Nexus` in Thunar.
+It accepts one selected `.deb`, `.AppImage`, or `.appimage` file and dispatches
+to `nexus-install-selected-app.sh`, which then calls the existing install
+helpers.
+
+For unpacked binaries or custom scripts, `nexus-register-app.sh` creates a
+normal user-level desktop launcher:
+
+```sh
+docker exec -u abc nexus-desktop bash /config/nexus/scripts/nexus-register-app.sh --name "My Tool" /config/Shared/my-tool
+```
+
+Use `--electron` for Electron-style binaries that need container-safe flags.
 
 ## Persistent `.deb` Restore
 
